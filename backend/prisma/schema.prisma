@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+// SQL Server no tiene enums en Prisma: usamos String y valores fijos en la app (FREE | OCCUPIED, OPEN | CLOSED).
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Waiter {
+  id           Int            @id @default(autoincrement())
+  name         String
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  sessions     TableSession[]
+}
+
+model RestaurantTable {
+  id           Int              @id @default(autoincrement())
+  number       Int              @unique
+  capacity     Int
+  status       String           @default("FREE")
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  sessions     TableSession[]
+  layoutTables LayoutTable[]
+}
+
+model Layout {
+  id           Int              @id @default(autoincrement())
+  name         String           @unique
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  layoutTables LayoutTable[]
+}
+
+model LayoutTable {
+  id           Int              @id @default(autoincrement())
+  layoutId     Int
+  tableId      Int
+
+  layout       Layout           @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  table        RestaurantTable  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([layoutId, tableId])
+}
+
+model MenuItem {
+  id           Int             @id @default(autoincrement())
+  name         String
+  description  String?
+  price        Decimal         @db.Decimal(10, 2)
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  sessionItems SessionItem[]
+
+  @@unique([name])
+}
+
+model TableSession {
+  id           Int                 @id @default(autoincrement())
+  tableId      Int
+  waiterId     Int
+  guestCount   Int
+  openedAt     DateTime            @default(now())
+  closedAt     DateTime?
+  status       String              @default("OPEN")
+  total        Decimal             @default(0) @db.Decimal(10, 2)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  table        RestaurantTable     @relation(fields: [tableId], references: [id])
+  waiter       Waiter              @relation(fields: [waiterId], references: [id])
+  items        SessionItem[]
+}
+
+model SessionItem {
+  id             Int           @id @default(autoincrement())
+  tableSessionId Int
+  menuItemId     Int
+  quantity       Int
+  unitPrice      Decimal       @db.Decimal(10, 2)
+  productName    String
+  note           String?
+  createdAt      DateTime      @default(now())
+
+  tableSession   TableSession  @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  menuItem       MenuItem      @relation(fields: [menuItemId], references: [id])
+
+  @@index([tableSessionId])
+}
