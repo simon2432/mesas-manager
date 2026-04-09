@@ -1,16 +1,17 @@
 import { Router } from "express";
 
+import { authMiddleware } from "../../middlewares/authMiddleware";
 import * as tablesController from "./tables.controller";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json({ message: "tables route ok" });
-});
+router.use(authMiddleware);
 
+router.get("/", tablesController.list);
 router.post("/", tablesController.create);
-router.get("/:id/current-session", tablesController.getCurrentSession);
+router.get("/:id/current", tablesController.getCurrent);
+router.patch("/:id/toggle-active", tablesController.toggleActive);
+router.patch("/:id", tablesController.update);
 router.get("/:id", tablesController.getById);
-router.put("/:id", tablesController.update);
 
 export default router;

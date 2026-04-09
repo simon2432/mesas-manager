@@ -1,21 +1,16 @@
 import { Router } from "express";
 
+import { authMiddleware } from "../../middlewares/authMiddleware";
 import * as menuController from "./menu.controller";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json({ message: "menu route ok" });
-});
+router.use(authMiddleware);
 
-router.get("/categories", menuController.listCategories);
-router.post("/categories", menuController.createCategory);
-router.put("/categories/:id", menuController.updateCategory);
-
-router.get("/items", menuController.listItems);
-router.get("/items/:id", menuController.getItemById);
-router.post("/items", menuController.createItem);
-router.put("/items/:id", menuController.updateItem);
-router.patch("/items/:id/toggle-active", menuController.toggleItemActive);
+router.get("/", menuController.getAll);
+router.post("/", menuController.create);
+router.get("/:id", menuController.getById);
+router.patch("/:id/toggle-active", menuController.toggleActive);
+router.patch("/:id", menuController.update);
 
 export default router;

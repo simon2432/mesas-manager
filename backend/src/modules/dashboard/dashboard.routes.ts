@@ -1,12 +1,11 @@
 import { Router } from "express";
 
+import { authMiddleware } from "../../middlewares/authMiddleware";
 import * as dashboardController from "./dashboard.controller";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json({ message: "dashboard route ok" });
-});
+router.use(authMiddleware);
 
 router.get("/summary", dashboardController.summary);
 

@@ -1,3 +1,395 @@
-/** Apertura / cierre de sesión y reglas de negocio — a implementar */
+import { prisma } from "../../lib/prisma";
+import { SESSION_STATUS, TABLE_STATUS } from "../../constants/tableFlow";
+import { badRequest, conflict, notFound } from "../../utils/httpError";
+import type {
+  AddSessionItemBody,
+  OpenSessionBody,
+  UpdateSessionItemBody,
+} from "./tableSessions.schemas";
 
-export {};
+type DbClient = Pick<typeof prisma, "sessionItem" | "tableSession">;
+
+async function setSessionTotalFromItems(
+  tx: DbClient,
+  sessionId: number,
+): Promise<number> {
+  const items = await tx.sessionItem.findMany({
+    where: { tableSessionId: sessionId },
+  });
+  const total = items.reduce(
+    (sum, i) => sum + Number(i.unitPrice) * i.quantity,
+    0,
+  );
+  await tx.tableSession.update({
+    where: { id: sessionId },
+    data: { total },
+  });
+  return total;
+}
+
+const sessionOpenSelect = {
+  id: true,
+  tableId: true,
+  waiterId: true,
+  guestCount: true,
+  openedAt: true,
+  closedAt: true,
+  status: true,
+  total: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+export type PublicOpenSession = {
+  id: number;
+  tableId: number;
+  waiterId: number;
+  guestCount: number;
+  openedAt: Date;
+  closedAt: Date | null;
+  status: string;
+  total: number;
+  createdAt: Date;
+  updatedAt: Date;
+  waiter: { id: number; name: string; isActive: boolean };
+};
+
+export async function openSession(
+  data: OpenSessionBody,
+): Promise<PublicOpenSession> {
+  return prisma.$transaction(async (tx) => {
+    const table = await tx.restaurantTable.findUnique({
+      where: { id: data.tableId },
+    });
+    if (!table) {
+      throw notFound("Table not found");
+    }
+    if (!table.isActive) {
+      throw badRequest("Table is not active");
+    }
+    if (table.status !== TABLE_STATUS.FREE) {
+      throw conflict("Table is not available");
+    }
+
+    const existingOpen = await tx.tableSession.findFirst({
+      where: {
+        tableId: data.tableId,
+        status: SESSION_STATUS.OPEN,
+      },
+    });
+    if (existingOpen) {
+      throw conflict("This table already has an open session");
+    }
+
+    const waiter = await tx.waiter.findUnique({
+      where: { id: data.waiterId },
+    });
+    if (!waiter) {
+      throw notFound("Waiter not found");
+    }
+    if (!waiter.isActive) {
+      throw badRequest("Waiter is not active");
+    }
+
+    const session = await tx.tableSession.create({
+      data: {
+        tableId: data.tableId,
+        waiterId: data.waiterId,
+        guestCount: data.guestCount,
+        status: SESSION_STATUS.OPEN,
+        total: 0,
+      },
+      select: sessionOpenSelect,
+    });
+
+    await tx.restaurantTable.update({
+      where: { id: data.tableId },
+      data: { status: TABLE_STATUS.OCCUPIED },
+    });
+
+    const waiterRow = await tx.waiter.findUniqueOrThrow({
+      where: { id: data.waiterId },
+      select: { id: true, name: true, isActive: true },
+    });
+
+    return {
+      ...session,
+      total: Number(session.total),
+      waiter: waiterRow,
+    };
+  });
+}
+
+export type SessionItemPublic = {
+  id: number;
+  menuItemId: number;
+  quantity: number;
+  unitPrice: number;
+  productName: string;
+  note: string | null;
+  lineTotal: number;
+};
+
+function toSessionItemPublic(item: {
+  id: number;
+  menuItemId: number;
+  quantity: number;
+  unitPrice: unknown;
+  productName: string;
+  note: string | null;
+}): SessionItemPublic {
+  const unitPrice = Number(item.unitPrice);
+  return {
+    id: item.id,
+    menuItemId: item.menuItemId,
+    quantity: item.quantity,
+    unitPrice,
+    productName: item.productName,
+    note: item.note,
+    lineTotal: unitPrice * item.quantity,
+  };
+}
+
+export async function addSessionItem(
+  sessionId: number,
+  body: AddSessionItemBody,
+): Promise<{
+  session: { id: number; total: number };
+  item: SessionItemPublic;
+}> {
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.tableSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!session) {
+      throw notFound("Session not found");
+    }
+    if (session.status !== SESSION_STATUS.OPEN) {
+      throw conflict("Cannot add items to a closed session");
+    }
+
+    const menuItem = await tx.menuItem.findUnique({
+      where: { id: body.menuItemId },
+    });
+    if (!menuItem) {
+      throw notFound("Menu item not found");
+    }
+    if (!menuItem.isActive) {
+      throw badRequest("Menu item is not active");
+    }
+
+    const unitPriceNum = Number(menuItem.price);
+    const lineTotal = body.quantity * unitPriceNum;
+
+    const item = await tx.sessionItem.create({
+      data: {
+        tableSessionId: sessionId,
+        menuItemId: body.menuItemId,
+        quantity: body.quantity,
+        unitPrice: menuItem.price,
+        productName: menuItem.name,
+        note: body.note ?? null,
+      },
+    });
+
+    const newTotal = Number(session.total) + lineTotal;
+    await tx.tableSession.update({
+      where: { id: sessionId },
+      data: { total: newTotal },
+    });
+
+    return {
+      session: { id: sessionId, total: newTotal },
+      item: toSessionItemPublic(item),
+    };
+  });
+}
+
+export async function updateSessionItem(
+  sessionId: number,
+  itemId: number,
+  body: UpdateSessionItemBody,
+): Promise<{
+  session: { id: number; total: number };
+  item: SessionItemPublic;
+}> {
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.tableSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!session) {
+      throw notFound("Session not found");
+    }
+    if (session.status !== SESSION_STATUS.OPEN) {
+      throw conflict("Cannot modify items on a closed session");
+    }
+
+    const existing = await tx.sessionItem.findFirst({
+      where: { id: itemId, tableSessionId: sessionId },
+    });
+    if (!existing) {
+      throw notFound("Session item not found");
+    }
+
+    const nextQuantity =
+      body.quantity !== undefined ? body.quantity : existing.quantity;
+    let nextNote = existing.note;
+    if (body.note !== undefined) {
+      if (body.note === null || body.note === "") {
+        nextNote = null;
+      } else {
+        const trimmed = body.note.trim();
+        nextNote = trimmed === "" ? null : trimmed;
+      }
+    }
+
+    const updated = await tx.sessionItem.update({
+      where: { id: itemId },
+      data: {
+        quantity: nextQuantity,
+        note: nextNote,
+      },
+    });
+
+    const total = await setSessionTotalFromItems(tx, sessionId);
+
+    return {
+      session: { id: sessionId, total },
+      item: toSessionItemPublic(updated),
+    };
+  });
+}
+
+export async function deleteSessionItem(
+  sessionId: number,
+  itemId: number,
+): Promise<{ session: { id: number; total: number } }> {
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.tableSession.findUnique({
+      where: { id: sessionId },
+    });
+    if (!session) {
+      throw notFound("Session not found");
+    }
+    if (session.status !== SESSION_STATUS.OPEN) {
+      throw conflict("Cannot modify items on a closed session");
+    }
+
+    const existing = await tx.sessionItem.findFirst({
+      where: { id: itemId, tableSessionId: sessionId },
+    });
+    if (!existing) {
+      throw notFound("Session item not found");
+    }
+
+    await tx.sessionItem.delete({ where: { id: itemId } });
+
+    const total = await setSessionTotalFromItems(tx, sessionId);
+
+    return {
+      session: { id: sessionId, total },
+    };
+  });
+}
+
+export type CloseSessionResult = {
+  total: number;
+  guestCount: number;
+  items: SessionItemPublic[];
+};
+
+export async function closeSession(
+  sessionId: number,
+): Promise<CloseSessionResult> {
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.tableSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        items: { orderBy: { id: "asc" } },
+      },
+    });
+    if (!session) {
+      throw notFound("Session not found");
+    }
+    if (session.status !== SESSION_STATUS.OPEN) {
+      throw conflict("Session is already closed");
+    }
+
+    const total = session.items.reduce(
+      (sum, i) => sum + Number(i.unitPrice) * i.quantity,
+      0,
+    );
+
+    const items: SessionItemPublic[] = session.items.map((i) => {
+      const unitPrice = Number(i.unitPrice);
+      return {
+        id: i.id,
+        menuItemId: i.menuItemId,
+        quantity: i.quantity,
+        unitPrice,
+        productName: i.productName,
+        note: i.note,
+        lineTotal: unitPrice * i.quantity,
+      };
+    });
+
+    await tx.tableSession.update({
+      where: { id: sessionId },
+      data: {
+        status: SESSION_STATUS.CLOSED,
+        closedAt: new Date(),
+        total,
+      },
+    });
+
+    await tx.restaurantTable.update({
+      where: { id: session.tableId },
+      data: { status: TABLE_STATUS.FREE },
+    });
+
+    return {
+      total,
+      guestCount: session.guestCount,
+      items,
+    };
+  });
+}
+
+export async function getSessionById(sessionId: number) {
+  const session = await prisma.tableSession.findUnique({
+    where: { id: sessionId },
+    include: {
+      waiter: { select: { id: true, name: true, isActive: true } },
+      items: { orderBy: { id: "asc" } },
+    },
+  });
+  if (!session) {
+    throw notFound("Session not found");
+  }
+
+  const items = session.items.map((i) => {
+    const unitPrice = Number(i.unitPrice);
+    return {
+      id: i.id,
+      menuItemId: i.menuItemId,
+      quantity: i.quantity,
+      unitPrice,
+      productName: i.productName,
+      note: i.note,
+      lineTotal: unitPrice * i.quantity,
+    };
+  });
+
+  return {
+    id: session.id,
+    tableId: session.tableId,
+    waiterId: session.waiterId,
+    guestCount: session.guestCount,
+    openedAt: session.openedAt,
+    closedAt: session.closedAt,
+    status: session.status,
+    total: Number(session.total),
+    waiter: session.waiter,
+    items,
+  };
+}

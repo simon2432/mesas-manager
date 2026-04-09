@@ -16,6 +16,9 @@ dist/
 /src/generated/
 /generated/
 
+# ─── Expo (si se corre por error en esta carpeta) ─────────────────────────────
+.expo/
+
 # ─── Logs ─────────────────────────────────────────────────────────────────────
 *.log
 npm-debug.log*

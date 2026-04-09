@@ -1,13 +1,13 @@
 import { Router } from "express";
 
+import { authMiddleware } from "../../middlewares/authMiddleware";
 import * as historyController from "./history.controller";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json({ message: "history route ok" });
-});
+router.use(authMiddleware);
 
-router.get("/daily", historyController.daily);
+router.get("/daily", historyController.dailyList);
+router.get("/daily/:id", historyController.dailyDetail);
 
 export default router;
