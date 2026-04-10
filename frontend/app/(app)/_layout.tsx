@@ -38,6 +38,15 @@ export default function AppLayout() {
           headerStyle: { backgroundColor: welcomeTheme.white },
         }}
       />
+      <Stack.Screen
+        name="mesa/[id]"
+        options={{
+          headerShown: true,
+          title: "Mesa",
+          headerTintColor: welcomeTheme.orange,
+          headerStyle: { backgroundColor: welcomeTheme.white },
+        }}
+      />
     </Stack>
   );
 }

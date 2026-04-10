@@ -1,7 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import { SESSION_STATUS } from "../../constants/tableFlow";
 import { notFound } from "../../utils/httpError";
-import { getLocalDayBounds } from "../../utils/localDayBounds";
 
 export type DailyClosedSessionRow = {
   sessionId: number;
@@ -35,9 +34,10 @@ function closedTodayWhere(start: Date, end: Date) {
   };
 }
 
-export async function getDailyClosedSessions(): Promise<DailyClosedSessionRow[]> {
-  const { start, end } = getLocalDayBounds();
-
+export async function getDailyClosedSessions(
+  start: Date,
+  end: Date,
+): Promise<DailyClosedSessionRow[]> {
   const rows = await prisma.tableSession.findMany({
     where: closedTodayWhere(start, end),
     orderBy: { closedAt: "desc" },
@@ -60,9 +60,9 @@ export async function getDailyClosedSessions(): Promise<DailyClosedSessionRow[]>
 
 export async function getDailyClosedSessionDetail(
   sessionId: number,
+  start: Date,
+  end: Date,
 ): Promise<DailyClosedSessionDetail> {
-  const { start, end } = getLocalDayBounds();
-
   const session = await prisma.tableSession.findFirst({
     where: {
       id: sessionId,
@@ -76,7 +76,7 @@ export async function getDailyClosedSessionDetail(
   });
 
   if (!session || !session.closedAt) {
-    throw notFound("Closed session not found for today");
+    throw notFound("Closed session not found for the selected day");
   }
 
   const items = session.items.map((i) => {

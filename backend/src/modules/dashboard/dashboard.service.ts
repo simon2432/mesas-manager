@@ -1,19 +1,59 @@
 import { prisma } from "../../lib/prisma";
 import { SESSION_STATUS, TABLE_STATUS } from "../../constants/tableFlow";
-import { getLocalDayBounds } from "../../utils/localDayBounds";
-
 export type DashboardSummary = {
+  selectedDate: string;
+  isSelectedDateToday: boolean;
   totalTables: number;
-  activeTables: number;
-  freeTables: number;
-  activeSessions: number;
-  peopleSeated: number;
+  /** Solo tiene sentido para el día actual del servidor; en días pasados/futuros es `null`. */
+  activeTables: number | null;
+  freeTables: number | null;
+  activeSessions: number | null;
+  peopleSeated: number | null;
   itemsSoldToday: number;
   revenueToday: number;
 };
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const { start, end } = getLocalDayBounds();
+export async function getDashboardSummary(input: {
+  start: Date;
+  end: Date;
+  ymd: string;
+  isSelectedDateToday: boolean;
+}): Promise<DashboardSummary> {
+  const { start, end, ymd, isSelectedDateToday } = input;
+
+  const itemsAggPromise = prisma.sessionItem.aggregate({
+    where: {
+      createdAt: { gte: start, lte: end },
+    },
+    _sum: { quantity: true },
+  });
+
+  const revenueAggPromise = prisma.tableSession.aggregate({
+    where: {
+      openedAt: { gte: start, lte: end },
+    },
+    _sum: { total: true },
+  });
+
+  if (!isSelectedDateToday) {
+    const [totalTables, itemsAgg, revenueAgg] = await Promise.all([
+      prisma.restaurantTable.count({ where: { isActive: true } }),
+      itemsAggPromise,
+      revenueAggPromise,
+    ]);
+
+    return {
+      selectedDate: ymd,
+      isSelectedDateToday: false,
+      totalTables,
+      activeTables: null,
+      freeTables: null,
+      activeSessions: null,
+      peopleSeated: null,
+      itemsSoldToday: itemsAgg._sum.quantity ?? 0,
+      revenueToday: Number(revenueAgg._sum.total ?? 0),
+    };
+  }
 
   const [
     totalTables,
@@ -38,21 +78,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       where: { status: SESSION_STATUS.OPEN },
       _sum: { guestCount: true },
     }),
-    prisma.sessionItem.aggregate({
-      where: {
-        createdAt: { gte: start, lte: end },
-      },
-      _sum: { quantity: true },
-    }),
-    prisma.tableSession.aggregate({
-      where: {
-        openedAt: { gte: start, lte: end },
-      },
-      _sum: { total: true },
-    }),
+    itemsAggPromise,
+    revenueAggPromise,
   ]);
 
   return {
+    selectedDate: ymd,
+    isSelectedDateToday: true,
     totalTables,
     activeTables,
     freeTables,
