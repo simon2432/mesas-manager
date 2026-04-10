@@ -1,24 +1,33 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+
+import type { AuthUser } from "@/src/types/user.types";
 
 type AuthState = {
   token: string | null;
-  setToken: (token: string | null) => void;
-  clearAuth: () => void;
+  user: AuthUser | null;
+  setSession: (payload: { token: string; user: AuthUser }) => void;
+  setUser: (user: AuthUser | null) => void;
+  logout: () => void;
 };
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
-      setToken: (token) => set({ token }),
-      clearAuth: () => set({ token: null }),
+      user: null,
+      setSession: ({ token, user }) => set({ token, user }),
+      setUser: (user) => set({ user }),
+      logout: () => set({ token: null, user: null }),
     }),
     {
-      name: 'mesas-auth',
+      name: "mesas-auth",
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ token: state.token }),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+      }),
     },
   ),
 );

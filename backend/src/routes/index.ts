@@ -7,11 +7,13 @@ import layoutsRoutes from "../modules/layouts/layouts.routes";
 import menuRoutes from "../modules/menu/menu.routes";
 import tableSessionsRoutes from "../modules/tableSessions/tableSessions.routes";
 import tablesRoutes from "../modules/tables/tables.routes";
+import usersRoutes from "../modules/users/users.routes";
 import waitersRoutes from "../modules/waiters/waiters.routes";
 
 /** Recursos REST bajo `/api`. Operacional: `GET /health` queda fuera (ver `app.ts`). */
 export function registerRoutes(app: Express): void {
   app.use("/api/auth", authRoutes);
+  app.use("/api/users", usersRoutes);
   app.use("/api/waiters", waitersRoutes);
   app.use("/api/tables", tablesRoutes);
   app.use("/api/menu", menuRoutes);

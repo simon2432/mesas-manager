@@ -1,41 +1,130 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { type Href, Redirect, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getApiBaseUrl } from '@/src/constants/api';
-import { useAuthStore } from '@/src/store/auth.store';
+import type { AuthSuccessResponse } from "@/src/api/auth.api";
+import { LoginModal } from "@/src/components/auth/LoginModal";
+import { RegisterModal } from "@/src/components/auth/RegisterModal";
+import { welcomeTheme } from "@/src/constants/authTheme";
+import { useAuthStore } from "@/src/store/auth.store";
 
-export default function HomeScreen() {
+/** Metro resuelve mal `@/` dentro de `require`; ruta relativa al archivo. */
+const LOGO_SOURCE = require("../assets/images/mesas-logo.png");
+
+export default function WelcomeScreen() {
+  const router = useRouter();
   const token = useAuthStore((s) => s.token);
+  const setSession = useAuthStore((s) => s.setSession);
+
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+
+  const onAuthSuccess = (data: AuthSuccessResponse) => {
+    setSession({ token: data.token, user: data.user });
+    setLoginOpen(false);
+    setRegisterOpen(false);
+    router.replace("/mesas" as Href);
+  };
+
+  if (token) {
+    return <Redirect href={"/mesas" as Href} />;
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mesas Manager</Text>
-      <Text style={styles.label}>API base</Text>
-      <Text style={styles.mono}>{getApiBaseUrl()}</Text>
-      <Text style={styles.label}>Sesión</Text>
-      <Text style={styles.mono}>{token ? 'Token guardado' : 'Sin token'}</Text>
-    </View>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <StatusBar style="dark" />
+      <View style={styles.root}>
+        <View style={styles.logoBlock}>
+          <View style={styles.logoPanel}>
+            <Image
+              source={LOGO_SOURCE}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityLabel="Mesas Manager"
+            />
+          </View>
+        </View>
+
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
+            onPress={() => setLoginOpen(true)}
+          >
+            <Text style={styles.btnText}>iniciar sesion</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
+            onPress={() => setRegisterOpen(true)}
+          >
+            <Text style={styles.btnText}>registrarme</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <LoginModal
+        visible={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={onAuthSuccess}
+      />
+      <RegisterModal
+        visible={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSuccess={onAuthSuccess}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    gap: 8,
+    backgroundColor: welcomeTheme.orange,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 16,
+  root: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 40,
+    paddingTop: "14%",
   },
-  label: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 8,
+  logoBlock: {
+    alignItems: "center",
+    marginBottom: 40,
   },
-  mono: {
-    fontSize: 14,
-    fontFamily: 'monospace',
+  logoPanel: {
+    backgroundColor: welcomeTheme.white,
+    paddingVertical: 28,
+    paddingHorizontal: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  /** Tamaño fijo: en web `Image.resolveAssetSource` no existe (react-native-web). */
+  logo: {
+    width: 260,
+    height: 160,
+  },
+  actions: {
+    width: "100%",
+    maxWidth: 320,
+    gap: 12,
+    alignSelf: "center",
+  },
+  btn: {
+    backgroundColor: welcomeTheme.white,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 0,
+  },
+  btnPressed: {
+    opacity: 0.88,
+  },
+  btnText: {
+    color: welcomeTheme.textDark,
+    fontSize: 16,
+    fontWeight: "500",
+    textTransform: "lowercase",
+    letterSpacing: 0.2,
   },
 });

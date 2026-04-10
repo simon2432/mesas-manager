@@ -3,6 +3,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { authColors } from "@/src/constants/authTheme";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -17,11 +19,27 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <Stack
           screenOptions={{
-            headerShown: true,
-            headerTitle: "Mesas",
+            headerStyle: { backgroundColor: authColors.surface },
+            headerTintColor: authColors.text,
+            headerTitleStyle: { fontWeight: "700" },
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: authColors.bg },
           }}
-        />
-        <StatusBar style="auto" />
+        >
+          <Stack.Screen
+            name="index"
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="(app)"
+            options={{
+              headerShown: false,
+            }}
+          />
+        </Stack>
+        <StatusBar style="light" />
       </SafeAreaProvider>
     </QueryClientProvider>
   );

@@ -4,7 +4,8 @@ import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
 import { prisma } from "../../lib/prisma";
 import { unauthorized } from "../../utils/httpError";
-import type { JwtUserPayload } from "./auth.schemas";
+import * as usersService from "../users/users.service";
+import type { JwtUserPayload, RegisterBody } from "./auth.schemas";
 
 const JWT_EXPIRES_IN = "7d";
 
@@ -43,6 +44,29 @@ export async function login(
       id: user.id,
       name: user.name,
       email: user.email,
+    },
+  };
+}
+
+export async function register(
+  data: RegisterBody,
+): Promise<{ token: string; user: PublicUser }> {
+  const created = await usersService.createUser(data);
+
+  const payload: JwtUserPayload = {
+    userId: created.id,
+    email: created.email,
+  };
+  const token = jwt.sign(payload, env.JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
+
+  return {
+    token,
+    user: {
+      id: created.id,
+      name: created.name,
+      email: created.email,
     },
   };
 }
