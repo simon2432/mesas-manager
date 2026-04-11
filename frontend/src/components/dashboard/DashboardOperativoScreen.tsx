@@ -13,7 +13,10 @@ import { fetchDashboardSummary } from "@/src/api/dashboard.api";
 import { OperationalDayBar } from "@/src/components/ui/OperationalDayBar";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
-import { useOperationalDayStore } from "@/src/store/operationalDay.store";
+import {
+  deviceLocalYmd,
+  useOperationalDayStore,
+} from "@/src/store/operationalDay.store";
 
 function formatMoney(n: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -64,6 +67,8 @@ export function DashboardOperativoScreen() {
 
   const s = query.data;
   const showLive = s?.isSelectedDateToday === true;
+  const showPastDayNotice =
+    s != null ? s.isSelectedDateToday === false : dateYmd !== deviceLocalYmd();
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -80,11 +85,14 @@ export function DashboardOperativoScreen() {
       >
         <Text style={styles.screenTitle}>Operación</Text>
         <OperationalDayBar />
-        <Text style={styles.hint}>
-          El día se interpreta en hora local del servidor. Las métricas de
-          mesas ocupadas y sesiones abiertas solo aplican cuando ese día es el
-          actual en el servidor.
-        </Text>
+        {showPastDayNotice ? (
+          <View style={[styles.noticeWide, { marginBottom: 16 }]}>
+            <Text style={styles.noticeText}>
+              Para este día no se muestra el estado en vivo de mesas ni sesiones
+              abiertas (solo disponible para el día actual del servidor).
+            </Text>
+          </View>
+        ) : null}
 
         {query.isPending ? (
           <ActivityIndicator
@@ -118,13 +126,10 @@ export function DashboardOperativoScreen() {
                 />
               </>
             ) : (
-              <View style={styles.noticeWide}>
-                <Text style={styles.noticeText}>
-                  Para este día no se muestra el estado en vivo de mesas ni
-                  sesiones abiertas (solo disponible para el día actual del
-                  servidor).
-                </Text>
-              </View>
+              <StatCard
+                label="Total personas ese día"
+                value={String(s.totalPeopleThatDay ?? 0)}
+              />
             )}
             <StatCard
               label={
@@ -142,8 +147,8 @@ export function DashboardOperativoScreen() {
                 {formatMoney(s.revenueToday)}
               </Text>
               <Text style={styles.cardFoot}>
-                Suma del total de sesiones que abrieron en la fecha elegida
-                (si el día es hoy, incluye mesas aún abiertas).
+                Suma del total de sesiones que abrieron en la fecha elegida (si
+                el día es hoy, incluye mesas aún abiertas).
               </Text>
             </View>
           </View>
@@ -172,12 +177,6 @@ const styles = StyleSheet.create({
     color: welcomeTheme.textDark,
     marginTop: 8,
     marginBottom: 6,
-  },
-  hint: {
-    fontSize: 13,
-    color: mesasTheme.muted,
-    lineHeight: 18,
-    marginBottom: 20,
   },
   grid: {
     flexDirection: "row",

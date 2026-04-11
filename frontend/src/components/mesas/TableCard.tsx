@@ -1,8 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
-import { cardShadowStyle, mesasTheme } from "@/src/constants/mesasTheme";
+import {
+  cardShadowStyle,
+  mesasModalStyles,
+  mesasTheme,
+} from "@/src/constants/mesasTheme";
 import type { PublicTable } from "@/src/types/tables.types";
 
 type Props = {
@@ -14,6 +27,8 @@ type Props = {
   onToggleActive: (t: PublicTable) => void;
 };
 
+type MenuPhase = "closed" | "actions" | "confirmDeactivate";
+
 export function TableCard({
   table,
   width,
@@ -22,53 +37,33 @@ export function TableCard({
   onEdit,
   onToggleActive,
 }: Props) {
+  const insets = useSafeAreaInsets();
+  const [menuPhase, setMenuPhase] = useState<MenuPhase>("closed");
+
   const occupied = table.status === "OCCUPIED";
   const active = table.isActive;
 
-  const confirmDeactivate = () => {
-    Alert.alert(
-      "¿Desactivar esta mesa?",
-      "Dejá de usarla en el salón hasta que la reactives.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Desactivar",
-          style: "destructive",
-          onPress: () => onToggleActive(table),
-        },
-      ],
-    );
+  const closeMenu = () => setMenuPhase("closed");
+
+  const openActionsMenu = () => setMenuPhase("actions");
+
+  const runEdit = () => {
+    closeMenu();
+    onEdit(table);
   };
 
-  const openActionsMenu = () => {
-    if (!active) {
-      Alert.alert(`Mesa ${table.number}`, undefined, [
-        {
-          text: "Activar mesa",
-          onPress: () => onToggleActive(table),
-        },
-        { text: "Cancelar", style: "cancel" },
-      ]);
-      return;
-    }
-
-    const opts: {
-      text: string;
-      style?: "destructive" | "cancel";
-      onPress?: () => void;
-    }[] = [{ text: "Editar datos", onPress: () => onEdit(table) }];
-
-    if (table.status === "FREE") {
-      opts.push({
-        text: "Desactivar mesa",
-        style: "destructive",
-        onPress: confirmDeactivate,
-      });
-    }
-
-    opts.push({ text: "Cancelar", style: "cancel" });
-    Alert.alert(`Mesa ${table.number}`, "Elegí una acción", opts);
+  const runActivate = () => {
+    closeMenu();
+    onToggleActive(table);
   };
+
+  const runDeactivate = () => {
+    closeMenu();
+    onToggleActive(table);
+  };
+
+  /** Solo mesa activa y libre puede desactivarse (alineado al backend). */
+  const canDeactivate = active && !occupied;
 
   let primaryLabel = "Inactiva";
   let onPrimary: (() => void) | undefined;
@@ -81,6 +76,8 @@ export function TableCard({
     primaryLabel = "Abrir mesa";
     onPrimary = () => onOpenSession(table);
   }
+
+  const sheetVisible = menuPhase !== "closed";
 
   return (
     <View style={[styles.card, cardShadowStyle(), { width }]}>
@@ -136,6 +133,105 @@ export function TableCard({
           {primaryLabel}
         </Text>
       </Pressable>
+
+      <Modal
+        visible={sheetVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeMenu}
+      >
+        <View style={mesasModalStyles.backdrop}>
+          <Pressable style={mesasModalStyles.dim} onPress={closeMenu} />
+          <View
+            style={[
+              mesasModalStyles.sheet,
+              styles.actionSheet,
+              Platform.OS === "web" && styles.actionSheetWeb,
+              { paddingBottom: Math.max(insets.bottom, 20) },
+            ]}
+          >
+            {menuPhase === "actions" ? (
+              <>
+                <Text style={mesasModalStyles.sheetTitle}>
+                  Mesa {table.number}
+                </Text>
+                <Text style={mesasModalStyles.sheetHint}>
+                  {active && occupied
+                    ? "Con sesión abierta solo podés editar datos. Cerrá la sesión para desactivar la mesa."
+                    : "Elegí una acción"}
+                </Text>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.menuRow,
+                    pressed && styles.menuRowPressed,
+                  ]}
+                  onPress={runEdit}
+                >
+                  <Text style={styles.menuRowText}>Editar datos</Text>
+                </Pressable>
+
+                {!active ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.menuRow,
+                      pressed && styles.menuRowPressed,
+                    ]}
+                    onPress={runActivate}
+                  >
+                    <Text style={styles.menuRowText}>Activar mesa</Text>
+                  </Pressable>
+                ) : null}
+
+                {canDeactivate ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.menuRow,
+                      pressed && styles.menuRowPressed,
+                    ]}
+                    onPress={() => setMenuPhase("confirmDeactivate")}
+                  >
+                    <Text style={styles.menuRowTextDanger}>
+                      Desactivar mesa
+                    </Text>
+                  </Pressable>
+                ) : null}
+
+                <Pressable
+                  style={mesasModalStyles.ghostBtn}
+                  onPress={closeMenu}
+                >
+                  <Text style={mesasModalStyles.ghostBtnText}>Cerrar</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={mesasModalStyles.sheetTitle}>
+                  ¿Desactivar mesa {table.number}?
+                </Text>
+                <Text style={mesasModalStyles.sheetHint}>
+                  Dejá de usarla en el salón hasta que la reactives.
+                </Text>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.destructiveBtn,
+                    pressed && styles.menuRowPressed,
+                  ]}
+                  onPress={runDeactivate}
+                >
+                  <Text style={styles.destructiveBtnText}>Desactivar</Text>
+                </Pressable>
+                <Pressable
+                  style={mesasModalStyles.ghostBtn}
+                  onPress={() => setMenuPhase("actions")}
+                >
+                  <Text style={mesasModalStyles.ghostBtnText}>Volver</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -221,5 +317,42 @@ const styles = StyleSheet.create({
   },
   primaryBtnTextMuted: {
     color: mesasTheme.muted,
+  },
+  actionSheet: {
+    maxHeight: "70%",
+  },
+  actionSheetWeb: {
+    maxWidth: 400,
+    alignSelf: "center",
+    width: "100%",
+  },
+  menuRow: {
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: mesasTheme.border,
+  },
+  menuRowPressed: { opacity: 0.85 },
+  menuRowText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: welcomeTheme.textDark,
+  },
+  menuRowTextDanger: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#b00020",
+  },
+  destructiveBtn: {
+    marginTop: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderRadius: 8,
+    backgroundColor: "#b00020",
+  },
+  destructiveBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

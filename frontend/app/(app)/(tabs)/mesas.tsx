@@ -18,8 +18,8 @@ import { getApiErrorMessage } from "@/src/api/auth.api";
 import { fetchDashboardSummary } from "@/src/api/dashboard.api";
 import { fetchTables, toggleTableActive } from "@/src/api/tables.api";
 import { fetchWaiters } from "@/src/api/waiters.api";
-import { useOperationalDayStore } from "@/src/store/operationalDay.store";
-import { CreateTableModal } from "@/src/components/mesas/CreateTableModal";
+import { useAppliedLayoutStore } from "@/src/store/appliedLayout.store";
+import { deviceLocalYmd } from "@/src/store/operationalDay.store";
 import { EditTableModal } from "@/src/components/mesas/EditTableModal";
 import { OpenSessionModal } from "@/src/components/mesas/OpenSessionModal";
 import { TableCard } from "@/src/components/mesas/TableCard";
@@ -29,11 +29,15 @@ import type { PublicTable } from "@/src/types/tables.types";
 
 const LOGO_SOURCE = require("../../../assets/images/mesas-logo.png");
 
-function FooterStat({ label, value }: { label: string; value: string }) {
+function HeaderDashStat({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.statCard}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+    <View style={styles.headerStat}>
+      <Text style={styles.headerStatLabel} numberOfLines={3}>
+        {label}
+      </Text>
+      <Text style={styles.headerStatValue} numberOfLines={1}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -54,9 +58,13 @@ export default function MesasScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { cardWidth, contentWidth, horizontalPad, gap } = useMesasGridLayout();
-  const dateYmd = useOperationalDayStore((s) => s.dateYmd);
+  /** Siempre hoy local: el día elegido en historial/dashboard es global y no debe vaciar las métricas en vivo del inicio. */
+  const headerSummaryYmd = deviceLocalYmd();
+  const appliedLayouts = useAppliedLayoutStore((s) => s.appliedLayouts);
+  const removeAppliedLayout = useAppliedLayoutStore(
+    (s) => s.removeAppliedLayout,
+  );
 
-  const [createOpen, setCreateOpen] = useState(false);
   const [editTable, setEditTable] = useState<PublicTable | null>(null);
   const [openSessionTable, setOpenSessionTable] = useState<PublicTable | null>(
     null,
@@ -68,8 +76,8 @@ export default function MesasScreen() {
   });
 
   const summaryQuery = useQuery({
-    queryKey: ["dashboard", "summary", dateYmd],
-    queryFn: () => fetchDashboardSummary(dateYmd),
+    queryKey: ["dashboard", "summary", headerSummaryYmd],
+    queryFn: () => fetchDashboardSummary(headerSummaryYmd),
   });
 
   const waitersQuery = useQuery({
@@ -92,20 +100,37 @@ export default function MesasScreen() {
     },
   });
 
-  const sortedTables = useMemo(() => {
+  /** Solo mesas activas en la vista principal; las inactivas se gestionan en Gestión mesas. */
+  const tables = useMemo(() => {
     const list = tablesQuery.data?.tables ?? [];
-    return [...list].sort((a, b) => {
-      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-      return a.number - b.number;
-    });
+    return [...list]
+      .filter((t) => t.isActive)
+      .sort((a, b) => a.number - b.number);
   }, [tablesQuery.data?.tables]);
 
-  const tables: PublicTable[] = sortedTables;
+  const appliedIdSet = useMemo(() => {
+    const s = new Set<number>();
+    for (const e of appliedLayouts) {
+      for (const id of e.layoutTableIds) s.add(id);
+    }
+    return s;
+  }, [appliedLayouts]);
+
+  const tablesByAppliedLayout = useMemo(() => {
+    return appliedLayouts.map((entry) => ({
+      entry,
+      tables: tables.filter((t) => entry.layoutTableIds.includes(t.id)),
+    }));
+  }, [appliedLayouts, tables]);
+
+  const tablesOutsideAppliedLayout = useMemo(() => {
+    if (appliedLayouts.length === 0) return tables;
+    return tables.filter((t) => !appliedIdSet.has(t.id));
+  }, [tables, appliedLayouts.length, appliedIdSet]);
+
   const summary = summaryQuery.data;
 
-  const totalCapacityActive = tables
-    .filter((t) => t.isActive)
-    .reduce((s, t) => s + t.capacity, 0);
+  const totalCapacityActive = tables.reduce((s, t) => s + t.capacity, 0);
 
   const occupancyPeople =
     summary != null && summary.peopleSeated != null
@@ -136,7 +161,22 @@ export default function MesasScreen() {
             resizeMode="contain"
             accessibilityLabel="Mesas Manager"
           />
-          <Text style={styles.topTitle}>Mesas Manager</Text>
+          <View style={styles.headerStatsRow}>
+            {summaryQuery.isPending ? (
+              <View style={styles.headerStatsLoading}>
+                <ActivityIndicator size="small" color={welcomeTheme.textDark} />
+              </View>
+            ) : (
+              <>
+                <HeaderDashStat label="OCUP. MESAS" value={occupancyTables} />
+                <HeaderDashStat label="OCUP. GENTE" value={occupancyPeople} />
+                <HeaderDashStat
+                  label="CANT. ÍTEMS VENDIDOS"
+                  value={ordersToday}
+                />
+              </>
+            )}
+          </View>
         </View>
       </View>
 
@@ -156,21 +196,21 @@ export default function MesasScreen() {
         >
           <Pressable
             style={({ pressed }) => [
-              styles.toolbarPrimary,
-              pressed && styles.toolbarPressed,
-            ]}
-            onPress={() => setCreateOpen(true)}
-          >
-            <Text style={styles.toolbarPrimaryText}>+ Nueva mesa</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
               styles.toolbarSecondary,
               pressed && styles.toolbarPressed,
             ]}
             onPress={() => router.push("/layouts")}
           >
             <Text style={styles.toolbarSecondaryText}>Layouts</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.toolbarSecondary,
+              pressed && styles.toolbarPressed,
+            ]}
+            onPress={() => router.push("/gestion-mesas")}
+          >
+            <Text style={styles.toolbarSecondaryText}>Gestión mesas</Text>
           </Pressable>
         </View>
 
@@ -183,8 +223,110 @@ export default function MesasScreen() {
           <Text style={styles.errorText}>No se pudieron cargar las mesas.</Text>
         ) : tables.length === 0 ? (
           <Text style={styles.emptyText}>
-            No hay mesas cargadas. Creá la primera con &quot;Nueva mesa&quot;.
+            No hay mesas activas. Creá o activá mesas en &quot;Gestión
+            mesas&quot;.
           </Text>
+        ) : appliedLayouts.length > 0 ? (
+          <View
+            style={{
+              width: contentWidth,
+              maxWidth: "100%",
+              alignSelf: "center",
+            }}
+          >
+            {tablesByAppliedLayout.map(
+              ({ entry, tables: groupTables }, idx) => (
+                <View key={entry.layoutId} style={styles.layoutFrame}>
+                  <View style={styles.layoutFrameHeader}>
+                    <View style={styles.layoutFrameHeaderTitles}>
+                      <Text style={styles.layoutFrameLabel}>
+                        {appliedLayouts.length > 1
+                          ? `Layout activo ${idx + 1}`
+                          : "Layout activo"}
+                      </Text>
+                      <Text style={styles.layoutFrameTitle}>
+                        {entry.layoutName}
+                      </Text>
+                    </View>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.layoutFrameDismiss,
+                        pressed && styles.toolbarPressed,
+                      ]}
+                      onPress={() => removeAppliedLayout(entry.layoutId)}
+                      accessibilityLabel="Quitar agrupación de este layout"
+                    >
+                      <Text style={styles.layoutFrameDismissText}>
+                        Quitar agrupación
+                      </Text>
+                    </Pressable>
+                  </View>
+                  {groupTables.length === 0 ? (
+                    <Text style={styles.layoutFrameEmpty}>
+                      Ninguna mesa activa de este layout en el salón.
+                    </Text>
+                  ) : (
+                    <View style={[styles.cardGrid, { gap }]}>
+                      {groupTables.map((t) => (
+                        <TableCard
+                          key={t.id}
+                          table={t}
+                          width={cardWidth}
+                          onOpenSession={setOpenSessionTable}
+                          onViewDetail={(table) =>
+                            router.push(`/mesa/${table.id}` as Href)
+                          }
+                          onEdit={setEditTable}
+                          onToggleActive={(table) =>
+                            toggleMutation.mutate(table.id)
+                          }
+                        />
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ),
+            )}
+
+            {tablesOutsideAppliedLayout.length > 0 ? (
+              <>
+                <Text style={styles.outsideSectionTitle}>
+                  Otras mesas activas
+                </Text>
+                <Text style={styles.outsideSectionHint}>
+                  Mesas activas que no forman parte de ninguno de los layouts
+                  aplicados (siguen igual al aplicarlos).
+                </Text>
+                <View
+                  style={[
+                    styles.cardGrid,
+                    {
+                      width: contentWidth,
+                      maxWidth: "100%",
+                      alignSelf: "center",
+                      gap,
+                    },
+                  ]}
+                >
+                  {tablesOutsideAppliedLayout.map((t) => (
+                    <TableCard
+                      key={t.id}
+                      table={t}
+                      width={cardWidth}
+                      onOpenSession={setOpenSessionTable}
+                      onViewDetail={(table) =>
+                        router.push(`/mesa/${table.id}` as Href)
+                      }
+                      onEdit={setEditTable}
+                      onToggleActive={(table) =>
+                        toggleMutation.mutate(table.id)
+                      }
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
+          </View>
         ) : (
           <View
             style={[
@@ -213,21 +355,6 @@ export default function MesasScreen() {
           </View>
         )}
       </ScrollView>
-
-      <View style={[styles.footer, { paddingHorizontal: horizontalPad }]}>
-        <Text style={styles.footerHeading}>DASHBOARD</Text>
-        <View style={styles.statsRow}>
-          <FooterStat label="OCUP. MESAS" value={occupancyTables} />
-          <FooterStat label="OCUP. GENTE" value={occupancyPeople} />
-          <FooterStat label="ÍTEMS DÍA" value={ordersToday} />
-        </View>
-      </View>
-
-      <CreateTableModal
-        visible={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={invalidateMesas}
-      />
 
       <EditTableModal
         visible={editTable !== null}
@@ -259,24 +386,65 @@ const styles = StyleSheet.create({
   },
   topBar: {
     backgroundColor: welcomeTheme.orange,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(0,0,0,0.08)",
   },
   topBarInner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 14,
+  },
+  headerStatsRow: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    alignContent: "center",
+    gap: 5,
+    minWidth: 0,
+  },
+  headerStatsLoading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    minHeight: 56,
+  },
+  headerStat: {
+    width: 148,
+    height: 62,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderRadius: 11,
+  },
+  headerStatLabel: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 6,
+    fontSize: 11,
+    fontWeight: "800",
+    color: welcomeTheme.textDark,
+    letterSpacing: 0.12,
+    opacity: 0.92,
+    textAlign: "left",
+    lineHeight: 13,
+  },
+  headerStatValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: welcomeTheme.textDark,
+    flexShrink: 0,
   },
   topLogo: {
-    width: 36,
-    height: 22,
-  },
-  topTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: welcomeTheme.white,
-    letterSpacing: 0.3,
+    width: 88,
+    height: 58,
   },
   scroll: {
     flex: 1,
@@ -291,17 +459,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     marginBottom: 20,
-  },
-  toolbarPrimary: {
-    backgroundColor: welcomeTheme.orange,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-  },
-  toolbarPrimaryText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
   },
   toolbarSecondary: {
     paddingVertical: 12,
@@ -318,6 +475,71 @@ const styles = StyleSheet.create({
   },
   toolbarPressed: {
     opacity: 0.88,
+  },
+  layoutFrame: {
+    borderWidth: 2,
+    borderColor: welcomeTheme.orange,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    backgroundColor: "#fff",
+  },
+  layoutFrameHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 14,
+  },
+  layoutFrameHeaderTitles: {
+    flex: 1,
+    minWidth: 0,
+  },
+  layoutFrameDismiss: {
+    flexShrink: 0,
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: mesasTheme.border,
+    backgroundColor: mesasTheme.surface,
+  },
+  layoutFrameDismissText: {
+    color: mesasTheme.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  layoutFrameLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: welcomeTheme.orange,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  layoutFrameTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: welcomeTheme.textDark,
+  },
+  layoutFrameEmpty: {
+    fontSize: 14,
+    color: mesasTheme.muted,
+    lineHeight: 20,
+  },
+  outsideSectionTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: welcomeTheme.textDark,
+    marginBottom: 4,
+  },
+  outsideSectionHint: {
+    fontSize: 12,
+    color: mesasTheme.muted,
+    lineHeight: 17,
+    marginBottom: 12,
   },
   cardGrid: {
     flexDirection: "row",
@@ -336,43 +558,5 @@ const styles = StyleSheet.create({
     color: mesasTheme.muted,
     lineHeight: 22,
     marginTop: 8,
-  },
-  footer: {
-    backgroundColor: welcomeTheme.orange,
-    paddingTop: 10,
-    paddingBottom: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(0,0,0,0.1)",
-  },
-  footerHeading: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: welcomeTheme.textDark,
-    letterSpacing: 1.2,
-    marginBottom: 8,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: welcomeTheme.white,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    minHeight: 64,
-    justifyContent: "center",
-  },
-  statLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: welcomeTheme.textDark,
-    marginBottom: 4,
-    letterSpacing: 0.3,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: welcomeTheme.textDark,
   },
 });

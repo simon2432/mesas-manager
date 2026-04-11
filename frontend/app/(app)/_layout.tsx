@@ -39,6 +39,15 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="gestion-mesas"
+        options={{
+          headerShown: true,
+          title: "Gestión mesas",
+          headerTintColor: welcomeTheme.orange,
+          headerStyle: { backgroundColor: welcomeTheme.white },
+        }}
+      />
+      <Stack.Screen
         name="mesa/[id]"
         options={{
           headerShown: true,

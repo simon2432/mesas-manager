@@ -31,7 +31,12 @@ type Props = {
 };
 
 const MIN_DATE = new Date(2020, 0, 1);
-const MAX_DATE = new Date(2100, 11, 31);
+
+function todayNoon(): Date {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  return d;
+}
 
 export function CalendarPickModal({
   visible,
@@ -41,19 +46,28 @@ export function CalendarPickModal({
 }: Props) {
   const insets = useSafeAreaInsets();
   const [draftYmd, setDraftYmd] = useState(valueYmd);
+  const maxDate = todayNoon();
 
   useEffect(() => {
-    if (visible) setDraftYmd(valueYmd);
+    if (!visible) return;
+    const today = deviceLocalYmd();
+    const clamped = valueYmd > today ? today : valueYmd;
+    setDraftYmd(clamped);
   }, [visible, valueYmd]);
 
   const apply = () => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draftYmd)) return;
-    onConfirm(draftYmd);
+    const today = deviceLocalYmd();
+    const ymd = draftYmd > today ? today : draftYmd;
+    onConfirm(ymd);
     onClose();
   };
 
   const onNativeChange = (_: DateTimePickerEvent, date?: Date) => {
-    if (date) setDraftYmd(deviceLocalYmd(date));
+    if (!date) return;
+    const today = deviceLocalYmd();
+    const picked = deviceLocalYmd(date);
+    setDraftYmd(picked > today ? today : picked);
   };
 
   return (
@@ -69,6 +83,7 @@ export function CalendarPickModal({
           style={[
             mesasModalStyles.sheet,
             styles.sheet,
+            styles.sheetWidth,
             {
               paddingBottom: Math.max(insets.bottom, 20),
             },
@@ -80,7 +95,14 @@ export function CalendarPickModal({
           </Text>
 
           {Platform.OS === "web" ? (
-            <WebDateInput value={draftYmd} onChange={setDraftYmd} />
+            <WebDateInput
+              value={draftYmd}
+              onChange={(ymd) => {
+                const today = deviceLocalYmd();
+                setDraftYmd(ymd > today ? today : ymd);
+              }}
+              maxYmd={deviceLocalYmd()}
+            />
           ) : (
             <DateTimePicker
               value={ymdToLocalDate(draftYmd)}
@@ -88,7 +110,7 @@ export function CalendarPickModal({
               display={Platform.OS === "ios" ? "inline" : "calendar"}
               onChange={onNativeChange}
               minimumDate={MIN_DATE}
-              maximumDate={MAX_DATE}
+              maximumDate={maxDate}
               locale="es-AR"
               themeVariant="light"
             />
@@ -123,6 +145,12 @@ export function CalendarPickModal({
 const styles = StyleSheet.create({
   sheet: {
     maxHeight: "90%",
+  },
+  /** Mismo criterio que MenuItemFormModal (máx. 480px, centrado). */
+  sheetWidth: {
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 480,
   },
   actions: {
     flexDirection: "row",

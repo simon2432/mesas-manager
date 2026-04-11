@@ -14,6 +14,11 @@ function shiftYmd(ymd: string, deltaDays: number): string {
   return deviceLocalYmd(t);
 }
 
+function clampYmdToToday(ymd: string): string {
+  const t = deviceLocalYmd();
+  return ymd > t ? t : ymd;
+}
+
 type OperationalDayState = {
   dateYmd: string;
   setDateYmd: (ymd: string) => void;
@@ -21,9 +26,12 @@ type OperationalDayState = {
   goToday: () => void;
 };
 
-export const useOperationalDayStore = create<OperationalDayState>((set, get) => ({
-  dateYmd: deviceLocalYmd(),
-  setDateYmd: (dateYmd) => set({ dateYmd }),
-  shiftDay: (delta) => set({ dateYmd: shiftYmd(get().dateYmd, delta) }),
-  goToday: () => set({ dateYmd: deviceLocalYmd() }),
-}));
+export const useOperationalDayStore = create<OperationalDayState>(
+  (set, get) => ({
+    dateYmd: deviceLocalYmd(),
+    setDateYmd: (dateYmd) => set({ dateYmd: clampYmdToToday(dateYmd) }),
+    shiftDay: (delta) =>
+      set({ dateYmd: clampYmdToToday(shiftYmd(get().dateYmd, delta)) }),
+    goToday: () => set({ dateYmd: deviceLocalYmd() }),
+  }),
+);

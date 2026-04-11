@@ -1,13 +1,19 @@
+import { deviceLocalYmd } from "@/src/store/operationalDay.store";
+
 type Props = {
   value: string;
   onChange: (ymd: string) => void;
+  /** YYYY-MM-DD inclusive máximo (default: hoy local). */
+  maxYmd?: string;
 };
 
-export function WebDateInput({ value, onChange }: Props) {
+export function WebDateInput({ value, onChange, maxYmd }: Props) {
+  const max = maxYmd ?? deviceLocalYmd();
   return (
     <input
       type="date"
       value={value}
+      max={max}
       onChange={(e) => onChange(e.target.value)}
       style={{
         width: "100%",

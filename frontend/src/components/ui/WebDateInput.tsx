@@ -2,6 +2,7 @@
 export function WebDateInput(_props: {
   value: string;
   onChange: (ymd: string) => void;
+  maxYmd?: string;
 }) {
   return null;
 }

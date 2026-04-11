@@ -33,7 +33,9 @@ export function OperationalDayBar() {
   const shiftDay = useOperationalDayStore((s) => s.shiftDay);
   const goToday = useOperationalDayStore((s) => s.goToday);
 
-  const isDeviceToday = dateYmd === deviceLocalYmd();
+  const todayYmd = deviceLocalYmd();
+  const isDeviceToday = dateYmd === todayYmd;
+  const isLatestDay = dateYmd >= todayYmd;
 
   return (
     <View style={styles.wrap}>
@@ -63,14 +65,22 @@ export function OperationalDayBar() {
       </Pressable>
 
       <Pressable
-        style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-        onPress={() => shiftDay(1)}
+        style={({ pressed }) => [
+          styles.iconBtn,
+          pressed && !isLatestDay && styles.pressed,
+          isLatestDay && styles.iconBtnDisabled,
+        ]}
+        onPress={() => {
+          if (!isLatestDay) shiftDay(1);
+        }}
+        disabled={isLatestDay}
         accessibilityLabel="Día siguiente"
+        accessibilityState={{ disabled: isLatestDay }}
       >
         <Ionicons
           name="chevron-forward"
           size={22}
-          color={welcomeTheme.orange}
+          color={isLatestDay ? mesasTheme.muted : welcomeTheme.orange}
         />
       </Pressable>
 
@@ -107,6 +117,9 @@ const styles = StyleSheet.create({
   iconBtn: {
     padding: 8,
     borderRadius: 10,
+  },
+  iconBtnDisabled: {
+    opacity: 0.45,
   },
   pressed: { opacity: 0.75 },
   center: {

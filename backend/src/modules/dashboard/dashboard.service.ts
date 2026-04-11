@@ -9,6 +9,11 @@ export type DashboardSummary = {
   freeTables: number | null;
   activeSessions: number | null;
   peopleSeated: number | null;
+  /**
+   * Suma de comensales (`guestCount`) en sesiones que abrieron en la fecha elegida.
+   * Solo se informa cuando el día elegido no es el actual; en el día actual es `null` (ver `peopleSeated`).
+   */
+  totalPeopleThatDay: number | null;
   itemsSoldToday: number;
   revenueToday: number;
 };
@@ -36,11 +41,20 @@ export async function getDashboardSummary(input: {
   });
 
   if (!isSelectedDateToday) {
-    const [totalTables, itemsAgg, revenueAgg] = await Promise.all([
-      prisma.restaurantTable.count({ where: { isActive: true } }),
-      itemsAggPromise,
-      revenueAggPromise,
-    ]);
+    const peopleOpenedThatDayPromise = prisma.tableSession.aggregate({
+      where: {
+        openedAt: { gte: start, lte: end },
+      },
+      _sum: { guestCount: true },
+    });
+
+    const [totalTables, itemsAgg, revenueAgg, peopleOpenedAgg] =
+      await Promise.all([
+        prisma.restaurantTable.count({ where: { isActive: true } }),
+        itemsAggPromise,
+        revenueAggPromise,
+        peopleOpenedThatDayPromise,
+      ]);
 
     return {
       selectedDate: ymd,
@@ -50,6 +64,7 @@ export async function getDashboardSummary(input: {
       freeTables: null,
       activeSessions: null,
       peopleSeated: null,
+      totalPeopleThatDay: peopleOpenedAgg._sum.guestCount ?? 0,
       itemsSoldToday: itemsAgg._sum.quantity ?? 0,
       revenueToday: Number(revenueAgg._sum.total ?? 0),
     };
@@ -90,6 +105,7 @@ export async function getDashboardSummary(input: {
     freeTables,
     activeSessions,
     peopleSeated: seatedAgg._sum.guestCount ?? 0,
+    totalPeopleThatDay: null,
     itemsSoldToday: itemsAgg._sum.quantity ?? 0,
     revenueToday: Number(revenueAgg._sum.total ?? 0),
   };

@@ -8,6 +8,8 @@ export type DashboardSummary = {
   freeTables: number | null;
   activeSessions: number | null;
   peopleSeated: number | null;
+  /** Suma de comensales en sesiones que abrieron ese día (solo si no es el día actual). */
+  totalPeopleThatDay: number | null;
   itemsSoldToday: number;
   revenueToday: number;
 };
