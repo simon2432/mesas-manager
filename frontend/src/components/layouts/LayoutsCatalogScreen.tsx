@@ -142,7 +142,7 @@ export function LayoutsCatalogScreen() {
     };
     setAppliedLayouts(nextApplied.concat(entry));
     await qc.invalidateQueries({ queryKey: ["tables"] });
-    await qc.invalidateQueries({ queryKey: ["dashboard", "summary"] });
+    await qc.invalidateQueries({ queryKey: ["dashboard"] });
 
     let msg =
       "El layout quedó aplicado: en inicio verás sus mesas en el recuadro (hasta dos layouts, uno debajo del otro) y el resto de mesas activas abajo.";

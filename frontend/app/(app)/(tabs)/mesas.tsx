@@ -19,7 +19,7 @@ import { fetchDashboardSummary } from "@/src/api/dashboard.api";
 import { fetchTables, toggleTableActive } from "@/src/api/tables.api";
 import { fetchWaiters } from "@/src/api/waiters.api";
 import { useAppliedLayoutStore } from "@/src/store/appliedLayout.store";
-import { deviceLocalYmd } from "@/src/store/operationalDay.store";
+import { effectiveTodayYmd } from "@/src/store/operationalDay.store";
 import { EditTableModal } from "@/src/components/mesas/EditTableModal";
 import { OpenSessionModal } from "@/src/components/mesas/OpenSessionModal";
 import { TableCard } from "@/src/components/mesas/TableCard";
@@ -58,8 +58,7 @@ export default function MesasScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { cardWidth, contentWidth, horizontalPad, gap } = useMesasGridLayout();
-  /** Siempre hoy local: el día elegido en historial/dashboard es global y no debe vaciar las métricas en vivo del inicio. */
-  const headerSummaryYmd = deviceLocalYmd();
+  const headerSummaryYmd = effectiveTodayYmd();
   const appliedLayouts = useAppliedLayoutStore((s) => s.appliedLayouts);
   const removeAppliedLayout = useAppliedLayoutStore(
     (s) => s.removeAppliedLayout,
@@ -90,7 +89,7 @@ export default function MesasScreen() {
     mutationFn: toggleTableActive,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tables"] });
-      qc.invalidateQueries({ queryKey: ["dashboard", "summary"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: (e) => {
       Alert.alert(
@@ -100,7 +99,6 @@ export default function MesasScreen() {
     },
   });
 
-  /** Solo mesas activas en la vista principal; las inactivas se gestionan en Gestión mesas. */
   const tables = useMemo(() => {
     const list = tablesQuery.data?.tables ?? [];
     return [...list]
@@ -148,7 +146,7 @@ export default function MesasScreen() {
 
   const invalidateMesas = () => {
     qc.invalidateQueries({ queryKey: ["tables"] });
-    qc.invalidateQueries({ queryKey: ["dashboard", "summary"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
   return (

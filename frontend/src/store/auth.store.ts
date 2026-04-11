@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import type { AuthUser } from "@/src/types/user.types";
+import { useOperationalDayStore } from "@/src/store/operationalDay.store";
 
 type AuthState = {
   token: string | null;
@@ -19,7 +20,10 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       setSession: ({ token, user }) => set({ token, user }),
       setUser: (user) => set({ user }),
-      logout: () => set({ token: null, user: null }),
+      logout: () => {
+        useOperationalDayStore.getState().setServerTodayYmd(null);
+        set({ token: null, user: null });
+      },
     }),
     {
       name: "mesas-auth",

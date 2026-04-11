@@ -71,7 +71,7 @@ export function MesasGestionScreen() {
     mutationFn: toggleTableActive,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tables"] });
-      qc.invalidateQueries({ queryKey: ["dashboard", "summary"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: (e) => {
       Alert.alert(
@@ -97,7 +97,7 @@ export function MesasGestionScreen() {
 
   const invalidateMesas = () => {
     qc.invalidateQueries({ queryKey: ["tables"] });
-    qc.invalidateQueries({ queryKey: ["dashboard", "summary"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
   const emptyMessage =
@@ -119,10 +119,7 @@ export function MesasGestionScreen() {
       >
         <View style={[styles.headerRow, { maxWidth: contentWidth }]}>
           <Pressable
-            style={({ pressed }) => [
-              styles.addBtn,
-              pressed && styles.pressed,
-            ]}
+            style={({ pressed }) => [styles.addBtn, pressed && styles.pressed]}
             onPress={() => setCreateOpen(true)}
           >
             <Text style={styles.addBtnText}>+ Nueva mesa</Text>

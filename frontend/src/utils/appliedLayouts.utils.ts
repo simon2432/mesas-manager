@@ -9,10 +9,6 @@ export function newLayoutOverlapsApplied(
   return newTableIds.some((id) => union.has(id));
 }
 
-/**
- * Quita layouts aplicados desde el primero hasta que el nuevo conjunto de mesas
- * no comparta ninguna mesa con los que quedan (para "Reemplazar").
- */
 export function stripAppliedFromFrontUntilNoOverlap(
   applied: AppliedLayoutEntry[],
   newTableIds: number[],

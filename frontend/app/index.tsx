@@ -9,8 +9,9 @@ import { LoginModal } from "@/src/components/auth/LoginModal";
 import { RegisterModal } from "@/src/components/auth/RegisterModal";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { useAuthStore } from "@/src/store/auth.store";
+import { useOperationalDayStore } from "@/src/store/operationalDay.store";
 
-/** Metro resuelve mal `@/` dentro de `require`; ruta relativa al archivo. */
+// require() no resuelve alias @/
 const LOGO_SOURCE = require("../assets/images/mesas-logo.png");
 
 export default function WelcomeScreen() {
@@ -22,6 +23,7 @@ export default function WelcomeScreen() {
   const [registerOpen, setRegisterOpen] = useState(false);
 
   const onAuthSuccess = (data: AuthSuccessResponse) => {
+    useOperationalDayStore.getState().setServerTodayYmd(data.serverTodayYmd);
     setSession({ token: data.token, user: data.user });
     setLoginOpen(false);
     setRegisterOpen(false);
@@ -99,7 +101,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  /** Tamaño fijo: en web `Image.resolveAssetSource` no existe (react-native-web). */
   logo: {
     width: 260,
     height: 160,

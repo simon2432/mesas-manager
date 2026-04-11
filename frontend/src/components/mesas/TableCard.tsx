@@ -62,7 +62,6 @@ export function TableCard({
     onToggleActive(table);
   };
 
-  /** Solo mesa activa y libre puede desactivarse (alineado al backend). */
   const canDeactivate = active && !occupied;
 
   let primaryLabel = "Inactiva";

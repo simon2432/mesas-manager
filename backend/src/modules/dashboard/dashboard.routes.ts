@@ -8,5 +8,6 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/summary", dashboardController.summary);
+router.get("/summary-range", dashboardController.summaryRange);
 
 export default router;

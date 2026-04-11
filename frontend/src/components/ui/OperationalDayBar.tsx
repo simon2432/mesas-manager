@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
 import {
-  deviceLocalYmd,
+  effectiveTodayYmd,
   useOperationalDayStore,
 } from "@/src/store/operationalDay.store";
 
@@ -33,7 +33,7 @@ export function OperationalDayBar() {
   const shiftDay = useOperationalDayStore((s) => s.shiftDay);
   const goToday = useOperationalDayStore((s) => s.goToday);
 
-  const todayYmd = deviceLocalYmd();
+  const todayYmd = effectiveTodayYmd();
   const isDeviceToday = dateYmd === todayYmd;
   const isLatestDay = dateYmd >= todayYmd;
 

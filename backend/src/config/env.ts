@@ -17,6 +17,5 @@ export const env = {
     NODE_ENV === "production"
       ? required("JWT_SECRET", process.env.JWT_SECRET)
       : (process.env.JWT_SECRET ?? "dev-jwt-secret-change-me"),
-  /** Origen del cliente (CORS). Vacío = comportamiento permisivo de desarrollo. */
   CLIENT_URL: process.env.CLIENT_URL?.trim() ?? "",
 } as const;

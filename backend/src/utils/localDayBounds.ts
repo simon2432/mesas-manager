@@ -1,5 +1,3 @@
-/** Inicio y fin del día calendario en hora local del servidor. */
-
 export function getLocalDayBounds(): { start: Date; end: Date } {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -19,8 +17,10 @@ export function getLocalServerTodayYmd(): string {
   return formatLocalYmd(new Date());
 }
 
-/** `ymd` = YYYY-MM-DD interpretado en la zona horaria local del proceso (servidor). */
-export function getLocalDayBoundsForYmd(ymd: string): { start: Date; end: Date } {
+export function getLocalDayBoundsForYmd(ymd: string): {
+  start: Date;
+  end: Date;
+} {
   const trimmed = ymd.trim();
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
   if (!m) {
@@ -41,9 +41,6 @@ export function getLocalDayBoundsForYmd(ymd: string): { start: Date; end: Date }
   return { start, end };
 }
 
-/**
- * Resuelve el rango del día: sin query usa hoy en el servidor; con `date` usa ese YYYY-MM-DD local.
- */
 export function resolveLocalDayBounds(dateParam: string | undefined): {
   start: Date;
   end: Date;
@@ -55,4 +52,13 @@ export function resolveLocalDayBounds(dateParam: string | undefined): {
   }
   const { start, end } = getLocalDayBoundsForYmd(dateParam);
   return { start, end, ymd: dateParam.trim() };
+}
+
+export function inclusiveCalendarDayCount(
+  fromYmd: string,
+  toYmd: string,
+): number {
+  const { start: a } = getLocalDayBoundsForYmd(fromYmd);
+  const { start: b } = getLocalDayBoundsForYmd(toYmd);
+  return Math.floor((b.getTime() - a.getTime()) / 86_400_000) + 1;
 }

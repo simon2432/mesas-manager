@@ -8,7 +8,6 @@ export type DashboardSummary = {
   freeTables: number | null;
   activeSessions: number | null;
   peopleSeated: number | null;
-  /** Suma de comensales en sesiones que abrieron ese día (solo si no es el día actual). */
   totalPeopleThatDay: number | null;
   itemsSoldToday: number;
   revenueToday: number;
@@ -20,5 +19,27 @@ export async function fetchDashboardSummary(
   const { data } = await api.get<DashboardSummary>("/dashboard/summary", {
     params: { date: dateYmd },
   });
+  return data;
+}
+
+export type DashboardRangeSummary = {
+  from: string;
+  to: string;
+  dayCountInclusive: number;
+  totalTables: number;
+  sessionsOpened: number;
+  totalPeople: number;
+  itemsSold: number;
+  revenue: number;
+};
+
+export async function fetchDashboardRangeSummary(
+  from: string,
+  to: string,
+): Promise<DashboardRangeSummary> {
+  const { data } = await api.get<DashboardRangeSummary>(
+    "/dashboard/summary-range",
+    { params: { from, to } },
+  );
   return data;
 }

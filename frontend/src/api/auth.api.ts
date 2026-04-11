@@ -1,4 +1,4 @@
-import axios from "axios";
+import { isAxiosError } from "axios";
 
 import { api } from "@/src/api/client";
 import type { AuthUser } from "@/src/types/user.types";
@@ -7,10 +7,12 @@ export type AuthSuccessResponse = {
   message: string;
   token: string;
   user: AuthUser;
+  serverTodayYmd: string;
 };
 
 export type MeResponse = {
   user: AuthUser;
+  serverTodayYmd: string;
 };
 
 export async function loginRequest(
@@ -37,16 +39,13 @@ export async function registerRequest(
   return data;
 }
 
-export async function getMeRequest(): Promise<AuthUser> {
+export async function getMeRequest(): Promise<MeResponse> {
   const { data } = await api.get<MeResponse>("/auth/me");
-  return data.user;
+  return data;
 }
 
-export function getApiErrorMessage(
-  error: unknown,
-  fallback: string,
-): string {
-  if (axios.isAxiosError(error)) {
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError(error)) {
     const body = error.response?.data;
     if (body && typeof body === "object" && "message" in body) {
       const m = (body as { message: unknown }).message;

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import { asyncHandler } from "../../utils/asyncHandler";
+import { getLocalServerTodayYmd } from "../../utils/localDayBounds";
 import { loginBodySchema, registerBodySchema } from "./auth.schemas";
 import * as authService from "./auth.service";
 
@@ -35,6 +36,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     message: "Login successful",
     token,
     user,
+    serverTodayYmd: getLocalServerTodayYmd(),
   });
 });
 
@@ -46,5 +48,8 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const user = await authService.getCurrentUser(userId);
-  res.status(200).json({ user });
+  res.status(200).json({
+    user,
+    serverTodayYmd: getLocalServerTodayYmd(),
+  });
 });

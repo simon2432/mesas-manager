@@ -61,7 +61,7 @@ export default function MesaDetailScreen() {
   const refreshDetail = () => {
     qc.invalidateQueries({ queryKey: ["tables", tableId, "current"] });
     qc.invalidateQueries({ queryKey: ["tables"] });
-    qc.invalidateQueries({ queryKey: ["dashboard", "summary"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
   const tableForTitle = query.data?.table;

@@ -1,4 +1,3 @@
-/** Paleta alineada a marca oscura + acento dorado (modales / app interna). */
 export const authColors = {
   bg: "#0c0f14",
   surface: "#161b22",
@@ -11,7 +10,6 @@ export const authColors = {
   error: "#e57373",
 } as const;
 
-/** Pantalla de bienvenida (Frame / marca naranja). */
 export const welcomeTheme = {
   orange: "#F57C00",
   white: "#FFFFFF",

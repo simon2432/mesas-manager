@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,7 +7,7 @@ datasource db {
   provider = "sqlserver"
 }
 
-// SQL Server no tiene enums en Prisma: usamos String y valores fijos en la app (FREE | OCCUPIED, OPEN | CLOSED).
+// Table.status / Session.status: strings en app (FREE|OCCUPIED, OPEN|CLOSED).
 
 model User {
   id           Int       @id @default(autoincrement())

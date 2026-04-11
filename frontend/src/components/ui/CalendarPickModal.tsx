@@ -1,7 +1,7 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   Platform,
@@ -14,7 +14,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
-import { deviceLocalYmd } from "@/src/store/operationalDay.store";
+import {
+  deviceLocalYmd,
+  effectiveTodayYmd,
+} from "@/src/store/operationalDay.store";
 
 import { WebDateInput } from "./WebDateInput";
 
@@ -23,14 +26,23 @@ function ymdToLocalDate(ymd: string): Date {
   return new Date(y, m - 1, d, 12, 0, 0, 0);
 }
 
+function clampYmd(ymd: string, lo: string, hi: string): string {
+  if (ymd < lo) return lo;
+  if (ymd > hi) return hi;
+  return ymd;
+}
+
 type Props = {
   visible: boolean;
   valueYmd: string;
   onClose: () => void;
   onConfirm: (ymd: string) => void;
+  title?: string;
+  minYmd?: string;
+  maxYmd?: string;
 };
 
-const MIN_DATE = new Date(2020, 0, 1);
+const ABS_MIN_YMD = "2020-01-01";
 
 function todayNoon(): Date {
   const d = new Date();
@@ -43,31 +55,47 @@ export function CalendarPickModal({
   valueYmd,
   onClose,
   onConfirm,
+  title = "Elegir fecha",
+  minYmd,
+  maxYmd,
 }: Props) {
   const insets = useSafeAreaInsets();
   const [draftYmd, setDraftYmd] = useState(valueYmd);
-  const maxDate = todayNoon();
+
+  const today = effectiveTodayYmd();
+  const hi = maxYmd ?? today;
+  const lo = useMemo(() => {
+    const raw = minYmd ?? ABS_MIN_YMD;
+    return raw > hi ? hi : raw;
+  }, [minYmd, hi]);
+
+  const safeLo = lo <= hi ? lo : hi;
+  const safeHi = lo <= hi ? hi : lo;
+
+  const minimumDate = ymdToLocalDate(safeLo);
+  const maxPickerDate = useMemo(() => {
+    const d = ymdToLocalDate(safeHi);
+    const t = todayNoon();
+    return d.getTime() > t.getTime() ? t : d;
+  }, [safeHi]);
 
   useEffect(() => {
     if (!visible) return;
-    const today = deviceLocalYmd();
-    const clamped = valueYmd > today ? today : valueYmd;
+    const clamped = clampYmd(valueYmd, safeLo, safeHi);
     setDraftYmd(clamped);
-  }, [visible, valueYmd]);
+  }, [visible, valueYmd, safeLo, safeHi]);
 
   const apply = () => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draftYmd)) return;
-    const today = deviceLocalYmd();
-    const ymd = draftYmd > today ? today : draftYmd;
+    const ymd = clampYmd(draftYmd, safeLo, safeHi);
     onConfirm(ymd);
     onClose();
   };
 
   const onNativeChange = (_: DateTimePickerEvent, date?: Date) => {
     if (!date) return;
-    const today = deviceLocalYmd();
     const picked = deviceLocalYmd(date);
-    setDraftYmd(picked > today ? today : picked);
+    setDraftYmd(clampYmd(picked, safeLo, safeHi));
   };
 
   return (
@@ -89,19 +117,18 @@ export function CalendarPickModal({
             },
           ]}
         >
-          <Text style={mesasModalStyles.sheetTitle}>Elegir fecha</Text>
+          <Text style={mesasModalStyles.sheetTitle}>{title}</Text>
           <Text style={mesasModalStyles.sheetHint}>
-            Se usa el mismo día que enviás al servidor (YYYY-MM-DD).
+            Calendario local (YYYY-MM-DD). El servidor interpreta el día en su
+            zona horaria.
           </Text>
 
           {Platform.OS === "web" ? (
             <WebDateInput
               value={draftYmd}
-              onChange={(ymd) => {
-                const today = deviceLocalYmd();
-                setDraftYmd(ymd > today ? today : ymd);
-              }}
-              maxYmd={deviceLocalYmd()}
+              onChange={(ymd) => setDraftYmd(clampYmd(ymd, safeLo, safeHi))}
+              minYmd={safeLo}
+              maxYmd={safeHi}
             />
           ) : (
             <DateTimePicker
@@ -109,8 +136,8 @@ export function CalendarPickModal({
               mode="date"
               display={Platform.OS === "ios" ? "inline" : "calendar"}
               onChange={onNativeChange}
-              minimumDate={MIN_DATE}
-              maximumDate={maxDate}
+              minimumDate={minimumDate}
+              maximumDate={maxPickerDate}
               locale="es-AR"
               themeVariant="light"
             />
@@ -146,7 +173,6 @@ const styles = StyleSheet.create({
   sheet: {
     maxHeight: "90%",
   },
-  /** Mismo criterio que MenuItemFormModal (máx. 480px, centrado). */
   sheetWidth: {
     alignSelf: "center",
     width: "100%",

@@ -7,7 +7,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
-/** Debe ir antes de rutas dinámicas tipo /:id si se agregan después. */
+// Rutas literales antes de `/:id` si se agregan.
 router.patch("/me/password", usersController.changeMyPassword);
 router.post("/", usersController.create);
 

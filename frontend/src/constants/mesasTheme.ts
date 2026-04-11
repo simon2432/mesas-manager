@@ -2,7 +2,6 @@ import { Platform, StyleSheet } from "react-native";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
 
-/** UI de operación salón (cards, modales claros). */
 export const mesasTheme = {
   ...welcomeTheme,
   surface: "#f7f7f8",

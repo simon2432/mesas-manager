@@ -10,7 +10,6 @@ import tablesRoutes from "../modules/tables/tables.routes";
 import usersRoutes from "../modules/users/users.routes";
 import waitersRoutes from "../modules/waiters/waiters.routes";
 
-/** Recursos REST bajo `/api`. Operacional: `GET /health` queda fuera (ver `app.ts`). */
 export function registerRoutes(app: Express): void {
   app.use("/api/auth", authRoutes);
   app.use("/api/users", usersRoutes);

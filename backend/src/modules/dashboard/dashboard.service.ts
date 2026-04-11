@@ -1,22 +1,71 @@
 import { prisma } from "../../lib/prisma";
 import { SESSION_STATUS, TABLE_STATUS } from "../../constants/tableFlow";
+import {
+  getLocalDayBoundsForYmd,
+  inclusiveCalendarDayCount,
+} from "../../utils/localDayBounds";
 export type DashboardSummary = {
   selectedDate: string;
   isSelectedDateToday: boolean;
   totalTables: number;
-  /** Solo tiene sentido para el día actual del servidor; en días pasados/futuros es `null`. */
   activeTables: number | null;
   freeTables: number | null;
   activeSessions: number | null;
   peopleSeated: number | null;
-  /**
-   * Suma de comensales (`guestCount`) en sesiones que abrieron en la fecha elegida.
-   * Solo se informa cuando el día elegido no es el actual; en el día actual es `null` (ver `peopleSeated`).
-   */
   totalPeopleThatDay: number | null;
   itemsSoldToday: number;
   revenueToday: number;
 };
+
+export type DashboardRangeSummary = {
+  from: string;
+  to: string;
+  dayCountInclusive: number;
+  totalTables: number;
+  sessionsOpened: number;
+  totalPeople: number;
+  itemsSold: number;
+  revenue: number;
+};
+
+export async function getDashboardRangeSummary(
+  fromYmd: string,
+  toYmd: string,
+): Promise<DashboardRangeSummary> {
+  const { start } = getLocalDayBoundsForYmd(fromYmd);
+  const { end } = getLocalDayBoundsForYmd(toYmd);
+
+  const [totalTables, itemsAgg, revenueAgg, peopleAgg, sessionsOpened] =
+    await Promise.all([
+      prisma.restaurantTable.count({ where: { isActive: true } }),
+      prisma.sessionItem.aggregate({
+        where: { createdAt: { gte: start, lte: end } },
+        _sum: { quantity: true },
+      }),
+      prisma.tableSession.aggregate({
+        where: { openedAt: { gte: start, lte: end } },
+        _sum: { total: true },
+      }),
+      prisma.tableSession.aggregate({
+        where: { openedAt: { gte: start, lte: end } },
+        _sum: { guestCount: true },
+      }),
+      prisma.tableSession.count({
+        where: { openedAt: { gte: start, lte: end } },
+      }),
+    ]);
+
+  return {
+    from: fromYmd,
+    to: toYmd,
+    dayCountInclusive: inclusiveCalendarDayCount(fromYmd, toYmd),
+    totalTables,
+    sessionsOpened,
+    totalPeople: peopleAgg._sum.guestCount ?? 0,
+    itemsSold: itemsAgg._sum.quantity ?? 0,
+    revenue: Number(revenueAgg._sum.total ?? 0),
+  };
+}
 
 export async function getDashboardSummary(input: {
   start: Date;

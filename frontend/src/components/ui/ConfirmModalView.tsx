@@ -22,9 +22,6 @@ export type ConfirmModalViewProps = {
   onCancel: () => void;
 };
 
-/**
- * Diálogo de confirmación centrado, alineado al resto de modales del salón.
- */
 export function ConfirmModalView({
   visible,
   title,
