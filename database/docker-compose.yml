@@ -6,7 +6,7 @@ services:
     container_name: restaurant-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong!Pass123
+      - SA_PASSWORD=MesasDemo1
     ports:
       - "1433:1433"
     volumes:

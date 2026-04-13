@@ -89,9 +89,7 @@ El script **borra** usuarios, mesas, menú, mozos, layouts y sesiones existentes
 
 ## Puesta en marcha
 
-Los pasos detallados (variables de entorno, creación de la base, migraciones, cómo levantar backend y frontend en paralelo, y opciones para dispositivo físico o web) viven en un documento aparte para no mezclar la descripción del producto con el checklist de instalación:
-
-**→ [Setup del proyecto](./SETUP.md)**
+Instrucciones paso a paso (Docker con SQL Server, `copy .env.example .env`, migraciones, seed y Expo) en **[SETUP.md](./SETUP.md)**. En desarrollo, la clave del `sa` de Docker y la de `DATABASE_URL` son la misma de ejemplo: **`MesasDemo1`** (proyecto demo).
 
 ---
 

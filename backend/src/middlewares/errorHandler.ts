@@ -10,9 +10,8 @@ function prismaDatabaseHint(
     return {
       status: 503,
       message:
-        "SQL Server rechazó el usuario o la contraseña (revisá DATABASE_URL en .env). " +
-        "Si usás Docker, la contraseña debe ser la misma que SA_PASSWORD en database/docker-compose.yml. " +
-        "Si la clave tiene ! o @, codificá en la URL (! → %21, @ → %40). Ver SETUP.md.",
+        "No se pudo conectar a SQL Server (usuario o contraseña incorrectos en DATABASE_URL). " +
+        "Copiá `password=` de backend/.env.example o igualá SA_PASSWORD en database/docker-compose.yml. Ver SETUP.md.",
     };
   }
   if (e.code === "P1001") {
