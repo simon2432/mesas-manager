@@ -48,6 +48,15 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="informacion-uso"
+        options={{
+          headerShown: true,
+          title: "Información de uso",
+          headerTintColor: welcomeTheme.orange,
+          headerStyle: { backgroundColor: welcomeTheme.white },
+        }}
+      />
+      <Stack.Screen
         name="mesa/[id]"
         options={{
           headerShown: true,

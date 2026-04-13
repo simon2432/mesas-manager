@@ -52,6 +52,11 @@ export default function MoreScreen() {
       </View>
       <View style={styles.list}>
         <Row
+          label="Información de uso"
+          icon="help-circle-outline"
+          onPress={() => router.push("/informacion-uso")}
+        />
+        <Row
           label="Meseros"
           icon="people-outline"
           onPress={() => router.push("/meseros")}

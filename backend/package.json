@@ -7,6 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "db:seed": "tsx scripts/seed-demo.ts",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "test": "vitest run",
@@ -17,6 +18,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "prisma": {
+    "seed": "tsx scripts/seed-demo.ts"
+  },
   "dependencies": {
     "@prisma/adapter-mssql": "^7.7.0",
     "@prisma/client": "^7.7.0",
