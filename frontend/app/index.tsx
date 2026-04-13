@@ -11,7 +11,6 @@ import { welcomeTheme } from "@/src/constants/authTheme";
 import { useAuthStore } from "@/src/store/auth.store";
 import { useOperationalDayStore } from "@/src/store/operationalDay.store";
 
-// require() no resuelve alias @/
 const LOGO_SOURCE = require("../assets/images/mesas-logo.png");
 
 export default function WelcomeScreen() {
@@ -54,7 +53,7 @@ export default function WelcomeScreen() {
             style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
             onPress={() => setLoginOpen(true)}
           >
-            <Text style={styles.btnText}>iniciar sesion</Text>
+            <Text style={styles.btnText}>iniciar sesión</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}

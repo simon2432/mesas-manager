@@ -29,6 +29,8 @@ type Props = {
 
 type MenuPhase = "closed" | "actions" | "confirmDeactivate";
 
+const COMPACT_CARD_MAX_WIDTH = 128;
+
 export function TableCard({
   table,
   width,
@@ -39,6 +41,7 @@ export function TableCard({
 }: Props) {
   const insets = useSafeAreaInsets();
   const [menuPhase, setMenuPhase] = useState<MenuPhase>("closed");
+  const compact = width <= COMPACT_CARD_MAX_WIDTH;
 
   const occupied = table.status === "OCCUPIED";
   const active = table.isActive;
@@ -79,9 +82,18 @@ export function TableCard({
   const sheetVisible = menuPhase !== "closed";
 
   return (
-    <View style={[styles.card, cardShadowStyle(), { width }]}>
+    <View
+      style={[
+        styles.card,
+        compact && styles.cardCompact,
+        cardShadowStyle(),
+        { width },
+      ]}
+    >
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>Mesa {table.number}</Text>
+        <Text style={[styles.cardTitle, compact && styles.cardTitleCompact]}>
+          Mesa {table.number}
+        </Text>
         <Pressable
           hitSlop={10}
           onPress={openActionsMenu}
@@ -90,24 +102,27 @@ export function TableCard({
         >
           <Ionicons
             name="ellipsis-vertical"
-            size={20}
+            size={compact ? 17 : 20}
             color={mesasTheme.muted}
           />
         </Pressable>
       </View>
 
-      <Text style={styles.meta}>Capacidad {table.capacity}</Text>
+      <Text style={[styles.meta, compact && styles.metaCompact]}>
+        Cap. {table.capacity}
+      </Text>
 
-      <View style={styles.statusRow}>
+      <View style={[styles.statusRow, compact && styles.statusRowCompact]}>
         <View
           style={[
             styles.dot,
+            compact && styles.dotCompact,
             !active && styles.dotInactive,
             active && occupied && styles.dotOccupied,
             active && !occupied && styles.dotFree,
           ]}
         />
-        <Text style={styles.statusText}>
+        <Text style={[styles.statusText, compact && styles.statusTextCompact]}>
           {!active ? "Inactiva" : occupied ? "Ocupada" : "Libre"}
         </Text>
       </View>
@@ -115,6 +130,7 @@ export function TableCard({
       <Pressable
         style={({ pressed }) => [
           styles.primaryBtn,
+          compact && styles.primaryBtnCompact,
           !active && styles.primaryBtnDisabled,
           occupied && active && styles.primaryBtnOccupied,
           pressed && active && styles.primaryBtnPressed,
@@ -125,9 +141,13 @@ export function TableCard({
         <Text
           style={[
             styles.primaryBtnText,
+            compact && styles.primaryBtnTextCompact,
             occupied && active && styles.primaryBtnTextOnDark,
             !active && styles.primaryBtnTextMuted,
           ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit={compact}
+          minimumFontScale={compact ? 0.82 : 1}
         >
           {primaryLabel}
         </Text>
@@ -243,6 +263,10 @@ const styles = StyleSheet.create({
     borderColor: mesasTheme.border,
     padding: 14,
   },
+  cardCompact: {
+    padding: 9,
+    borderRadius: 10,
+  },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -254,6 +278,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: welcomeTheme.textDark,
     letterSpacing: -0.2,
+    flex: 1,
+    minWidth: 0,
+  },
+  cardTitleCompact: {
+    fontSize: 14,
+    letterSpacing: -0.15,
   },
   menuBtn: {
     padding: 4,
@@ -264,16 +294,29 @@ const styles = StyleSheet.create({
     color: mesasTheme.muted,
     marginBottom: 10,
   },
+  metaCompact: {
+    fontSize: 11,
+    marginBottom: 6,
+  },
   statusRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     marginBottom: 14,
   },
+  statusRowCompact: {
+    gap: 5,
+    marginBottom: 8,
+  },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  dotCompact: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   dotFree: {
     backgroundColor: "#2e7d32",
@@ -288,12 +331,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: welcomeTheme.textDark,
+    flex: 1,
+    minWidth: 0,
+  },
+  statusTextCompact: {
+    fontSize: 11,
   },
   primaryBtn: {
     backgroundColor: welcomeTheme.orange,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
+  },
+  primaryBtnCompact: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 7,
   },
   primaryBtnOccupied: {
     backgroundColor: mesasTheme.occupied,
@@ -309,6 +362,11 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: "#fff",
     fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  primaryBtnTextCompact: {
+    fontSize: 12,
     fontWeight: "700",
   },
   primaryBtnTextOnDark: {

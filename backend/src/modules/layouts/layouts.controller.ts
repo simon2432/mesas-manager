@@ -13,7 +13,9 @@ function parseLayoutId(req: Request, res: Response): number | null {
   const parsed = layoutIdParamSchema.safeParse(req.params);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid id" });
+    res
+      .status(400)
+      .json({ message: first?.message ?? "Identificador inválido" });
     return null;
   }
   return parsed.data.id;
@@ -36,7 +38,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   const parsed = createLayoutBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -51,7 +53,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   const parsed = updateLayoutBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -74,7 +76,7 @@ export const setTables = asyncHandler(async (req: Request, res: Response) => {
   const parsed = setLayoutTablesBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 

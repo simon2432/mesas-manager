@@ -76,7 +76,7 @@ export async function getDailyClosedSessionDetail(
   });
 
   if (!session || !session.closedAt) {
-    throw notFound("Closed session not found for the selected day");
+    throw notFound("No hay sesión cerrada para el día seleccionado");
   }
 
   const items = session.items.map((i) => {
@@ -102,4 +102,26 @@ export async function getDailyClosedSessionDetail(
     total: Number(session.total),
     items,
   };
+}
+
+/**
+ * Elimina una sesión **cerrada** por id (sin filtrar por día).
+ * El historial solo lista cerradas; así evitamos desajustes fecha/SQL Server vs Node.
+ */
+export async function deleteDailyClosedSession(
+  sessionId: number,
+): Promise<void> {
+  const session = await prisma.tableSession.findUnique({
+    where: { id: sessionId },
+    select: { id: true, status: true },
+  });
+
+  if (session == null || session.status !== SESSION_STATUS.CLOSED) {
+    throw notFound("No hay sesión cerrada para eliminar");
+  }
+
+  await prisma.$transaction([
+    prisma.sessionItem.deleteMany({ where: { tableSessionId: sessionId } }),
+    prisma.tableSession.delete({ where: { id: sessionId } }),
+  ]);
 }

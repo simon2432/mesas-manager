@@ -6,13 +6,19 @@
 
 Aplicación pensada para **un restaurante**: centraliza mesas en vivo, consumos, cierre de cuentas, menú, mozos y números del negocio en un solo lugar. El stack es un **monorepo** con API en Node y app móvil/web en Expo, hablando con **SQL Server** a través de Prisma.
 
-No pretende ser un SaaS multi-local: el modelo es **un salón, un equipo**. Igual hay **login con usuario y contraseña**: sirve para saber quién opera la app y mantener la sesión acotada al dispositivo, no para armar perfiles con distintos niveles de acceso en esta versión (quien tiene credenciales puede usar las pantallas habituales del flujo operativo).
+No pretende ser un SaaS multi-local: el modelo es **un salón, un equipo**.
+
+### Usuarios, login y permisos
+
+Hay **registro e inicio de sesión con JWT** porque la API necesita saber **qué pedidos son legítimos** (token por dispositivo o navegador) y porque conviene **saber con qué identidad** se operó si más adelante querés auditar o dar soporte. Eso no implica un sistema de **roles** (admin, mozo, cajero, etc.): **no está modelado ningún tipo de permiso distinto**. **Todo usuario que se registre y entre con su cuenta ve y puede usar las mismas pantallas** que el resto: mesas, menú, mozos, layouts, dashboard, historial y gestión de mesas.
+
+Se priorizó **simplicidad** frente a un producto multi-tenant o con vistas acotadas por rol (por ejemplo “solo ve sus mesas” o “solo el dueño ve totales”). Si en tu negocio el registro debe estar restringido, eso se resuelve a nivel **operativo o de despliegue** (quién conoce la URL, quién crea cuentas); el código, en esta versión, **no distingue perfiles**.
 
 ---
 
 ## Qué incluye (funcionalidades)
 
-- **Acceso** — Pantalla de bienvenida, registro/login y sesión con JWT; cierre de sesión desde _Más_.
+- **Acceso** — Bienvenida, registro/login, JWT y cierre de sesión desde _Más_ (sin roles: ver arriba).
 - **Mesas** — Vista principal del salón: mesas activas, ocupación y métricas rápidas del día; abrir mesa (mozo, comensales), ver detalle, cargar ítems del menú, cerrar sesión de mesa; desactivar mesa en salón cuando está libre.
 - **Layouts** — Plantas con conjuntos de mesas; aplicar hasta dos layouts sin solapamiento; reglas claras cuando hay conflicto (reemplazar agrupaciones).
 - **Gestión de mesas** — Alta, edición y activación en catálogo (numeración, capacidad, etc.).
@@ -22,7 +28,7 @@ No pretende ser un SaaS multi-local: el modelo es **un salón, un equipo**. Igua
 - **Meseros** — ABM de mozos y activación/desactivación para asignarlos al abrir mesa.
 - **Guía de uso** — Pantalla informativa dentro de _Más_, con capturas de referencia del flujo.
 
-La **API REST** documenta endpoints y contratos en **Swagger** (`/docs` con el backend en marcha).
+La **API REST** vive bajo **`/api/*`**; el mapa de prefijos está en `backend/src/routes/index.ts` y el detalle por recurso en cada módulo bajo `backend/src/modules/`.
 
 ---
 
@@ -34,6 +40,7 @@ mesas-manager/
 │   ├── prisma/       # Esquema y migraciones SQL Server
 │   ├── scripts/      # Utilidades (p. ej. seed de datos demo)
 │   └── src/          # Módulos (auth, mesas, sesiones, menú, layouts, dashboard, historial…)
+├── database/         # docker-compose para SQL Server en desarrollo (ver SETUP.md)
 ├── frontend/         # Cliente Expo (Expo Router)
 │   ├── app/          # Rutas y pantallas
 │   ├── assets/       # Imágenes (logo, figuras de ayuda, etc.)

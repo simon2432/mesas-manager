@@ -26,38 +26,52 @@ import { TableCard } from "@/src/components/mesas/TableCard";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
 import type { PublicTable } from "@/src/types/tables.types";
+import { useMesasCardGridLayout } from "@/src/utils/mesasCardGridLayout";
 
 const LOGO_SOURCE = require("../../../assets/images/mesas-logo.png");
 
-function HeaderDashStat({ label, value }: { label: string; value: string }) {
+function HeaderDashStat({
+  label,
+  value,
+  compact,
+}: {
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
   return (
     <View style={styles.headerStat}>
-      <Text style={styles.headerStatLabel} numberOfLines={3}>
+      <Text
+        style={[
+          styles.headerStatLabel,
+          compact && styles.headerStatLabelCompact,
+        ]}
+        numberOfLines={3}
+      >
         {label}
       </Text>
-      <Text style={styles.headerStatValue} numberOfLines={1}>
+      <Text
+        style={[
+          styles.headerStatValue,
+          compact && styles.headerStatValueCompact,
+        ]}
+        numberOfLines={1}
+      >
         {value}
       </Text>
     </View>
   );
 }
 
-function useMesasGridLayout() {
-  const { width } = useWindowDimensions();
-  const horizontalPad = 16;
-  const maxContent = Math.min(width - horizontalPad * 2, 1200);
-  const gap = 12;
-  const minCard = 172;
-  let cols = Math.floor((maxContent + gap) / (minCard + gap));
-  cols = Math.max(1, Math.min(4, cols));
-  const cardWidth = (maxContent - gap * (cols - 1)) / cols;
-  return { cardWidth, cols, contentWidth: maxContent, horizontalPad, gap };
-}
+const COMPACT_TOP_BAR_BREAKPOINT = 540;
 
 export default function MesasScreen() {
   const router = useRouter();
   const qc = useQueryClient();
-  const { cardWidth, contentWidth, horizontalPad, gap } = useMesasGridLayout();
+  const { width: windowWidth } = useWindowDimensions();
+  const compactTopBar = windowWidth < COMPACT_TOP_BAR_BREAKPOINT;
+  const { cardWidth, contentWidth, horizontalPad, gap } =
+    useMesasCardGridLayout();
   const headerSummaryYmd = effectiveTodayYmd();
   const appliedLayouts = useAppliedLayoutStore((s) => s.appliedLayouts);
   const removeAppliedLayout = useAppliedLayoutStore(
@@ -152,23 +166,42 @@ export default function MesasScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={[styles.topBar, { paddingHorizontal: horizontalPad }]}>
-        <View style={styles.topBarInner}>
+        <View
+          style={[
+            styles.topBarInner,
+            compactTopBar && styles.topBarInnerCompact,
+          ]}
+        >
           <Image
             source={LOGO_SOURCE}
-            style={styles.topLogo}
+            style={[styles.topLogo, compactTopBar && styles.topLogoCompact]}
             resizeMode="contain"
             accessibilityLabel="Mesas Manager"
           />
-          <View style={styles.headerStatsRow}>
+          <View
+            style={[
+              styles.headerStatsRow,
+              compactTopBar && styles.headerStatsRowFullWidth,
+            ]}
+          >
             {summaryQuery.isPending ? (
               <View style={styles.headerStatsLoading}>
                 <ActivityIndicator size="small" color={welcomeTheme.textDark} />
               </View>
             ) : (
               <>
-                <HeaderDashStat label="OCUP. MESAS" value={occupancyTables} />
-                <HeaderDashStat label="OCUP. GENTE" value={occupancyPeople} />
                 <HeaderDashStat
+                  compact={compactTopBar}
+                  label="OCUP. MESAS"
+                  value={occupancyTables}
+                />
+                <HeaderDashStat
+                  compact={compactTopBar}
+                  label="OCUP. GENTE"
+                  value={occupancyPeople}
+                />
+                <HeaderDashStat
+                  compact={compactTopBar}
                   label="CANT. ÍTEMS VENDIDOS"
                   value={ordersToday}
                 />
@@ -394,15 +427,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 14,
   },
+  topBarInnerCompact: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 12,
+  },
   headerStatsRow: {
     flex: 1,
     flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "center",
-    alignContent: "center",
-    gap: 5,
+    flexWrap: "nowrap",
+    alignItems: "stretch",
+    justifyContent: "space-between",
+    gap: 6,
     minWidth: 0,
+  },
+  headerStatsRowFullWidth: {
+    flex: 0,
+    width: "100%",
+    alignSelf: "stretch",
   },
   headerStatsLoading: {
     flex: 1,
@@ -412,13 +454,15 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   headerStat: {
-    width: 148,
-    height: 62,
+    flex: 1,
+    flexBasis: 0,
+    minWidth: 0,
+    minHeight: 62,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     backgroundColor: "rgba(255,255,255,0.96)",
     borderRadius: 11,
   },
@@ -434,15 +478,29 @@ const styles = StyleSheet.create({
     textAlign: "left",
     lineHeight: 13,
   },
+  headerStatLabelCompact: {
+    fontSize: 9,
+    letterSpacing: 0.06,
+    lineHeight: 11,
+    marginRight: 4,
+  },
   headerStatValue: {
     fontSize: 18,
     fontWeight: "800",
     color: welcomeTheme.textDark,
     flexShrink: 0,
   },
+  headerStatValueCompact: {
+    fontSize: 15,
+  },
   topLogo: {
     width: 88,
     height: 58,
+  },
+  topLogoCompact: {
+    width: 80,
+    height: 52,
+    alignSelf: "center",
   },
   scroll: {
     flex: 1,

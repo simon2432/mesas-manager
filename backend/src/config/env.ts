@@ -4,7 +4,7 @@ const NODE_ENV = process.env.NODE_ENV ?? "development";
 
 function required(name: string, value: string | undefined): string {
   if (value === undefined || value.trim() === "") {
-    throw new Error(`Missing required environment variable: ${name}`);
+    throw new Error(`Falta la variable de entorno obligatoria: ${name}`);
   }
   return value;
 }

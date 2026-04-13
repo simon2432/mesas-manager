@@ -11,7 +11,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   const parsed = createUserBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -23,18 +23,18 @@ export const changeMyPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (userId === undefined) {
-      res.status(401).json({ message: "Invalid credentials" });
+      res.status(401).json({ message: "Credenciales inválidas" });
       return;
     }
 
     const parsed = changeMyPasswordBodySchema.safeParse(req.body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
-      res.status(400).json({ message: first?.message ?? "Invalid request" });
+      res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
       return;
     }
 
     await usersService.changeMyPassword(userId, parsed.data);
-    res.status(200).json({ message: "Password updated" });
+    res.status(200).json({ message: "Contraseña actualizada" });
   },
 );

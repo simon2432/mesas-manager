@@ -9,13 +9,13 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   const parsed = registerBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
   const { token, user } = await authService.register(parsed.data);
   res.status(201).json({
-    message: "Registration successful",
+    message: "Registro exitoso",
     token,
     user,
   });
@@ -25,7 +25,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const parsed = loginBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -33,7 +33,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const { token, user } = await authService.login(email, password);
 
   res.status(200).json({
-    message: "Login successful",
+    message: "Sesión iniciada",
     token,
     user,
     serverTodayYmd: getLocalServerTodayYmd(),
@@ -43,7 +43,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 export const me = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   if (userId === undefined) {
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(401).json({ message: "Credenciales inválidas" });
     return;
   }
 

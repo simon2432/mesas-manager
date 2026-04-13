@@ -15,7 +15,7 @@ export const openSessionBodySchema = z.object({
   guestCount: z.coerce
     .number()
     .int()
-    .positive("guestCount must be greater than 0"),
+    .positive("La cantidad de personas debe ser mayor que 0"),
 });
 
 export type OpenSessionBody = z.infer<typeof openSessionBodySchema>;
@@ -25,7 +25,7 @@ export const addSessionItemBodySchema = z.object({
   quantity: z.coerce
     .number()
     .int()
-    .positive("quantity must be greater than 0"),
+    .positive("La cantidad debe ser mayor que 0"),
   note: z
     .string()
     .trim()
@@ -44,7 +44,7 @@ export const updateSessionItemBodySchema = z
       .optional(),
   })
   .refine((b) => b.quantity !== undefined || b.note !== undefined, {
-    message: "At least one of quantity, note is required",
+    message: "Indicá cantidad o nota (o ambos)",
   });
 
 export type UpdateSessionItemBody = z.infer<typeof updateSessionItemBodySchema>;

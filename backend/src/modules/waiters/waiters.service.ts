@@ -31,7 +31,7 @@ export async function getWaiterById(id: number): Promise<PublicWaiter> {
     select: waiterPublicSelect,
   });
   if (!waiter) {
-    throw notFound("Waiter not found");
+    throw notFound("Mesero no encontrado");
   }
   return waiter;
 }
@@ -44,7 +44,7 @@ export async function createWaiter(
     where: { name },
   });
   if (existing) {
-    throw conflict("A waiter with this name already exists");
+    throw conflict("Ya existe un mesero con ese nombre");
   }
 
   return prisma.waiter.create({
@@ -61,7 +61,7 @@ export async function updateWaiter(
   data: UpdateWaiterBody,
 ): Promise<PublicWaiter> {
   if (data.name === undefined) {
-    throw badRequest("No fields to update");
+    throw badRequest("No hay campos para actualizar");
   }
 
   const name = data.name.trim();
@@ -74,7 +74,7 @@ export async function updateWaiter(
     },
   });
   if (duplicate) {
-    throw conflict("A waiter with this name already exists");
+    throw conflict("Ya existe un mesero con ese nombre");
   }
 
   return prisma.waiter.update({

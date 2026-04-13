@@ -1,16 +1,16 @@
 import type { Request, Response } from "express";
 
-import { optionalLocalYmdQuerySchema } from "../../schemas/dateQuery";
+import { parseOptionalLocalYmdFromRequest } from "../../schemas/dateQuery";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { resolveLocalDayBounds } from "../../utils/localDayBounds";
 import { historySessionIdParamSchema } from "./history.schemas";
 import * as historyService from "./history.service";
 
 export const dailyList = asyncHandler(async (req: Request, res: Response) => {
-  const parsed = optionalLocalYmdQuerySchema.safeParse(req.query);
+  const parsed = parseOptionalLocalYmdFromRequest(req);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid query" });
+    res.status(400).json({ message: first?.message ?? "Consulta inválida" });
     return;
   }
 
@@ -33,14 +33,16 @@ export const dailyDetail = asyncHandler(async (req: Request, res: Response) => {
   const paramParsed = historySessionIdParamSchema.safeParse(req.params);
   if (!paramParsed.success) {
     const first = paramParsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid id" });
+    res
+      .status(400)
+      .json({ message: first?.message ?? "Identificador inválido" });
     return;
   }
 
-  const queryParsed = optionalLocalYmdQuerySchema.safeParse(req.query);
+  const queryParsed = parseOptionalLocalYmdFromRequest(req);
   if (!queryParsed.success) {
     const first = queryParsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid query" });
+    res.status(400).json({ message: first?.message ?? "Consulta inválida" });
     return;
   }
 
@@ -58,4 +60,18 @@ export const dailyDetail = asyncHandler(async (req: Request, res: Response) => {
     bounds.end,
   );
   res.status(200).json({ session });
+});
+
+export const dailyDelete = asyncHandler(async (req: Request, res: Response) => {
+  const paramParsed = historySessionIdParamSchema.safeParse(req.params);
+  if (!paramParsed.success) {
+    const first = paramParsed.error.issues[0];
+    res
+      .status(400)
+      .json({ message: first?.message ?? "Identificador inválido" });
+    return;
+  }
+
+  await historyService.deleteDailyClosedSession(paramParsed.data.id);
+  res.status(204).send();
 });

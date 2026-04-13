@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "API REST Mesas Manager (Express, Prisma, SQL Server)",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

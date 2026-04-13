@@ -36,7 +36,7 @@ export async function getTableById(id: number): Promise<PublicTable> {
     select: tablePublicSelect,
   });
   if (!table) {
-    throw notFound("Table not found");
+    throw notFound("Mesa no encontrada");
   }
   return table;
 }
@@ -46,7 +46,7 @@ export async function createTable(data: CreateTableBody): Promise<PublicTable> {
     where: { number: data.number },
   });
   if (existing) {
-    throw conflict("A table with this number already exists");
+    throw conflict("Ya existe una mesa con ese número");
   }
 
   return prisma.restaurantTable.create({
@@ -74,7 +74,7 @@ export async function updateTable(
       },
     });
     if (duplicate) {
-      throw conflict("A table with this number already exists");
+      throw conflict("Ya existe una mesa con ese número");
     }
   }
 
@@ -94,12 +94,12 @@ export async function toggleTableActive(id: number): Promise<PublicTable> {
     select: tablePublicSelect,
   });
   if (!table) {
-    throw notFound("Table not found");
+    throw notFound("Mesa no encontrada");
   }
 
   if (table.isActive) {
     if (table.status === TABLE_STATUS.OCCUPIED) {
-      throw conflict("Cannot deactivate a table with an open session");
+      throw conflict("No se puede desactivar una mesa con sesión abierta");
     }
     return prisma.restaurantTable.update({
       where: { id },
@@ -154,7 +154,7 @@ export async function getTableCurrentDetail(
   if (table.status === TABLE_STATUS.FREE) {
     if (session) {
       throw badRequest(
-        "Data inconsistency: table is FREE but has an open session",
+        "Inconsistencia: la mesa figura libre pero tiene una sesión abierta",
       );
     }
     return { table, openSession: null };
@@ -162,7 +162,7 @@ export async function getTableCurrentDetail(
 
   if (!session) {
     throw badRequest(
-      "Data inconsistency: table is OCCUPIED but has no open session",
+      "Inconsistencia: la mesa figura ocupada pero no tiene sesión abierta",
     );
   }
 

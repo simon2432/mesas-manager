@@ -120,14 +120,12 @@ export default function MesaDetailScreen() {
             <Text style={styles.blockTitle}>Mesa {table.number}</Text>
             <View style={styles.card}>
               <Text style={styles.freeHint}>
-                Esta mesa está libre. Abrila desde la pestaña Mesas para iniciar
-                una sesión.
+                Esta mesa está libre. Iniciá una sesión desde la pestaña Mesas.
               </Text>
             </View>
           </View>
         ) : (
           <>
-            {/* Bloque 1 — Resumen */}
             <View style={styles.block}>
               <Text style={styles.blockTitle}>Resumen de mesa</Text>
               <View style={styles.card}>
@@ -145,7 +143,6 @@ export default function MesaDetailScreen() {
               </View>
             </View>
 
-            {/* Bloque 2 — Consumos */}
             <View style={styles.block}>
               <Text style={styles.blockTitle}>Consumos</Text>
               <View style={styles.card}>
@@ -196,7 +193,6 @@ export default function MesaDetailScreen() {
               </View>
             </View>
 
-            {/* Bloque 3 — Acciones */}
             <View style={styles.block}>
               <Text style={styles.blockTitle}>Acciones</Text>
               <View style={styles.actionsCol}>

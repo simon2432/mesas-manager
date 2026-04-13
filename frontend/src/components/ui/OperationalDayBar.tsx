@@ -1,6 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
@@ -26,7 +32,11 @@ function formatYmdLabel(ymd: string) {
   }
 }
 
+const COMPACT_BAR_BREAKPOINT = 440;
+
 export function OperationalDayBar() {
+  const { width } = useWindowDimensions();
+  const compact = width < COMPACT_BAR_BREAKPOINT;
   const [calendarOpen, setCalendarOpen] = useState(false);
   const dateYmd = useOperationalDayStore((s) => s.dateYmd);
   const setDateYmd = useOperationalDayStore((s) => s.setDateYmd);
@@ -38,35 +48,55 @@ export function OperationalDayBar() {
   const isLatestDay = dateYmd >= todayYmd;
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, compact && styles.wrapCompact]}>
       <Pressable
-        style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.iconBtn,
+          compact && styles.iconBtnCompact,
+          pressed && styles.pressed,
+        ]}
         onPress={() => shiftDay(-1)}
         accessibilityLabel="Día anterior"
       >
-        <Ionicons name="chevron-back" size={22} color={welcomeTheme.orange} />
+        <Ionicons
+          name="chevron-back"
+          size={compact ? 20 : 22}
+          color={welcomeTheme.orange}
+        />
       </Pressable>
 
       <Pressable
-        style={({ pressed }) => [styles.center, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.center,
+          compact && styles.centerCompact,
+          pressed && styles.pressed,
+        ]}
         onPress={() => setCalendarOpen(true)}
         accessibilityRole="button"
         accessibilityLabel="Abrir calendario para elegir fecha"
       >
         <Ionicons
           name="calendar-outline"
-          size={20}
+          size={compact ? 18 : 20}
           color={welcomeTheme.orange}
           style={styles.calIcon}
         />
-        <Text style={styles.dateMain}>{formatYmdLabel(dateYmd)}</Text>
-        <Text style={styles.dateSub}>{dateYmd}</Text>
-        <Text style={styles.calHint}>Calendario</Text>
+        <Text
+          style={[styles.dateMain, compact && styles.dateMainCompact]}
+          numberOfLines={2}
+        >
+          {formatYmdLabel(dateYmd)}
+        </Text>
+        <Text style={[styles.dateSub, compact && styles.dateSubCompact]}>
+          {dateYmd}
+        </Text>
+        {!compact ? <Text style={styles.calHint}>Calendario</Text> : null}
       </Pressable>
 
       <Pressable
         style={({ pressed }) => [
           styles.iconBtn,
+          compact && styles.iconBtnCompact,
           pressed && !isLatestDay && styles.pressed,
           isLatestDay && styles.iconBtnDisabled,
         ]}
@@ -79,17 +109,25 @@ export function OperationalDayBar() {
       >
         <Ionicons
           name="chevron-forward"
-          size={22}
+          size={compact ? 20 : 22}
           color={isLatestDay ? mesasTheme.muted : welcomeTheme.orange}
         />
       </Pressable>
 
       {!isDeviceToday ? (
         <Pressable
-          style={({ pressed }) => [styles.todayBtn, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.todayBtn,
+            compact && styles.todayBtnCompact,
+            pressed && styles.pressed,
+          ]}
           onPress={goToday}
         >
-          <Text style={styles.todayBtnText}>Hoy</Text>
+          <Text
+            style={[styles.todayBtnText, compact && styles.todayBtnTextCompact]}
+          >
+            Hoy
+          </Text>
         </Pressable>
       ) : null}
 
@@ -114,9 +152,18 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingVertical: 4,
   },
+  wrapCompact: {
+    gap: 2,
+    marginBottom: 10,
+    paddingVertical: 2,
+  },
   iconBtn: {
     padding: 8,
     borderRadius: 10,
+  },
+  iconBtnCompact: {
+    padding: 6,
+    borderRadius: 8,
   },
   iconBtnDisabled: {
     opacity: 0.45,
@@ -129,6 +176,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 12,
+  },
+  centerCompact: {
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 10,
   },
   calIcon: {
     marginBottom: 2,
@@ -147,11 +199,19 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
     textAlign: "center",
   },
+  dateMainCompact: {
+    fontSize: 13,
+    lineHeight: 17,
+  },
   dateSub: {
     marginTop: 2,
     fontSize: 12,
     fontWeight: "600",
     color: mesasTheme.muted,
+  },
+  dateSubCompact: {
+    fontSize: 11,
+    marginTop: 1,
   },
   todayBtn: {
     paddingHorizontal: 12,
@@ -159,9 +219,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "rgba(245, 124, 0, 0.12)",
   },
+  todayBtnCompact: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
   todayBtnText: {
     fontSize: 14,
     fontWeight: "800",
     color: welcomeTheme.orange,
+  },
+  todayBtnTextCompact: {
+    fontSize: 12,
   },
 });

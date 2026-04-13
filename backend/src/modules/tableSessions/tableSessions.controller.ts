@@ -14,7 +14,9 @@ function parseSessionId(req: Request, res: Response): number | null {
   const parsed = sessionIdParamSchema.safeParse(req.params);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid id" });
+    res
+      .status(400)
+      .json({ message: first?.message ?? "Identificador inválido" });
     return null;
   }
   return parsed.data.id;
@@ -27,7 +29,7 @@ function parseSessionItemParams(
   const parsed = sessionItemParamsSchema.safeParse(req.params);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid params" });
+    res.status(400).json({ message: first?.message ?? "Parámetros inválidos" });
     return null;
   }
   return { sessionId: parsed.data.id, itemId: parsed.data.itemId };
@@ -37,7 +39,7 @@ export const open = asyncHandler(async (req: Request, res: Response) => {
   const parsed = openSessionBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -52,7 +54,7 @@ export const addItem = asyncHandler(async (req: Request, res: Response) => {
   const parsed = addSessionItemBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -67,7 +69,7 @@ export const updateItem = asyncHandler(async (req: Request, res: Response) => {
   const parsed = updateSessionItemBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 

@@ -12,7 +12,9 @@ function parseParamsId(req: Request, res: Response): number | null {
   const parsed = tableIdParamSchema.safeParse(req.params);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid id" });
+    res
+      .status(400)
+      .json({ message: first?.message ?? "Identificador inválido" });
     return null;
   }
   return parsed.data.id;
@@ -35,7 +37,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   const parsed = createTableBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -50,7 +52,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   const parsed = updateTableBodySchema.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    res.status(400).json({ message: first?.message ?? "Invalid request" });
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
     return;
   }
 
@@ -58,13 +60,15 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json({ table });
 });
 
-export const toggleActive = asyncHandler(async (req: Request, res: Response) => {
-  const id = parseParamsId(req, res);
-  if (id === null) return;
+export const toggleActive = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = parseParamsId(req, res);
+    if (id === null) return;
 
-  const table = await tablesService.toggleTableActive(id);
-  res.status(200).json({ table });
-});
+    const table = await tablesService.toggleTableActive(id);
+    res.status(200).json({ table });
+  },
+);
 
 export const getCurrent = asyncHandler(async (req: Request, res: Response) => {
   const id = parseParamsId(req, res);

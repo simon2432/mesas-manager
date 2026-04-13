@@ -24,7 +24,7 @@ export function getLocalDayBoundsForYmd(ymd: string): {
   const trimmed = ymd.trim();
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
   if (!m) {
-    throw new Error("Invalid date format");
+    throw new Error("Formato de fecha inválido");
   }
   const y = Number(m[1]);
   const mo = Number(m[2]) - 1;
@@ -35,7 +35,7 @@ export function getLocalDayBoundsForYmd(ymd: string): {
     start.getMonth() !== mo ||
     start.getDate() !== d
   ) {
-    throw new Error("Invalid calendar date");
+    throw new Error("Fecha de calendario inválida");
   }
   const end = new Date(y, mo, d, 23, 59, 59, 999);
   return { start, end };

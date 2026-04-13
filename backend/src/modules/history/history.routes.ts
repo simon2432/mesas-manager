@@ -9,5 +9,7 @@ router.use(authMiddleware);
 
 router.get("/daily", historyController.dailyList);
 router.get("/daily/:id", historyController.dailyDetail);
+router.post("/daily/:id/delete", historyController.dailyDelete);
+router.delete("/daily/:id", historyController.dailyDelete);
 
 export default router;

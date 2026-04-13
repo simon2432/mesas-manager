@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,8 +12,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { getApiErrorMessage } from "@/src/api/auth.api";
 import type { DailyClosedSessionRow } from "@/src/api/history.api";
-import { fetchDailyClosedSessions } from "@/src/api/history.api";
+import {
+  deleteDailyClosedSession,
+  fetchDailyClosedSessions,
+} from "@/src/api/history.api";
+import { IllustrativeHistoryPrintButton } from "@/src/components/history/IllustrativeHistoryPrintButton";
+import { useConfirm } from "@/src/components/ui/ConfirmProvider";
 import { OperationalDayBar } from "@/src/components/ui/OperationalDayBar";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
@@ -47,16 +54,48 @@ function formatRange(opened: string, closed: string) {
 export function HistorialDiaScreen() {
   const [detailId, setDetailId] = useState<number | null>(null);
   const dateYmd = useOperationalDayStore((s) => s.dateYmd);
+  const qc = useQueryClient();
+  const confirmDialog = useConfirm();
 
   const query = useQuery({
     queryKey: ["history", "daily", dateYmd],
     queryFn: () => fetchDailyClosedSessions(dateYmd),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (sessionId: number) => deleteDailyClosedSession(sessionId),
+    onSuccess: async (_, sessionId) => {
+      setDetailId((current) => (current === sessionId ? null : current));
+      await qc.invalidateQueries({ queryKey: ["history", "daily"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (e) => {
+      Alert.alert(
+        "No se pudo eliminar",
+        getApiErrorMessage(e, "Intentá de nuevo en unos segundos."),
+      );
+    },
+  });
+
   const rows = query.data ?? [];
 
   const openDetail = (row: DailyClosedSessionRow) => {
     setDetailId(row.sessionId);
+  };
+
+  const confirmDeleteSession = (row: DailyClosedSessionRow) => {
+    void (async () => {
+      const ok = await confirmDialog({
+        title: "Eliminar del historial",
+        message: `¿Quitar la sesión cerrada de la mesa ${row.tableNumber}? Los consumos dejarán de figurar en el historial. Esta acción no se puede deshacer.`,
+        confirmLabel: "Eliminar",
+        cancelLabel: "Cancelar",
+        destructive: true,
+      });
+      if (ok) {
+        deleteMutation.mutate(row.sessionId);
+      }
+    })();
   };
 
   return (
@@ -75,8 +114,8 @@ export function HistorialDiaScreen() {
         <Text style={styles.screenTitle}>Historial</Text>
         <OperationalDayBar />
         <Text style={styles.hint}>
-          Sesiones cerradas en la fecha elegida (cierre dentro de ese día,
-          hora local del servidor). Tocá una fila para ver consumos.
+          Sesiones cerradas en la fecha elegida (cierre dentro de ese día, hora
+          local del servidor). Tocá una fila para ver consumos.
         </Text>
 
         {query.isPending ? (
@@ -92,28 +131,43 @@ export function HistorialDiaScreen() {
           </Text>
         ) : (
           rows.map((row) => (
-            <Pressable
-              key={row.sessionId}
-              style={({ pressed }) => [
-                styles.row,
-                pressed && styles.rowPressed,
-              ]}
-              onPress={() => openDetail(row)}
-            >
-              <View style={styles.rowTop}>
-                <Text style={styles.tableBadge}>Mesa {row.tableNumber}</Text>
-                <Text style={styles.total}>{formatMoney(row.total)}</Text>
+            <View key={row.sessionId} style={styles.row}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.rowMain,
+                  pressed && styles.rowMainPressed,
+                ]}
+                onPress={() => openDetail(row)}
+              >
+                <View style={styles.rowTop}>
+                  <Text style={styles.tableBadge}>Mesa {row.tableNumber}</Text>
+                  <Text style={styles.total}>{formatMoney(row.total)}</Text>
+                </View>
+                <Text style={styles.waiter}>{row.waiterName}</Text>
+                <Text style={styles.people}>
+                  {row.guestCount}{" "}
+                  {row.guestCount === 1 ? "persona" : "personas"}
+                </Text>
+                <Text style={styles.times}>
+                  {formatRange(row.openedAt, row.closedAt)}
+                </Text>
+                <Text style={styles.chev}>Ver detalle ›</Text>
+              </Pressable>
+              <View style={styles.rowActions}>
+                <IllustrativeHistoryPrintButton />
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.deleteBtn,
+                    pressed && styles.deleteBtnPressed,
+                    deleteMutation.isPending && styles.deleteBtnDisabled,
+                  ]}
+                  onPress={() => confirmDeleteSession(row)}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Text style={styles.deleteBtnText}>Eliminar</Text>
+                </Pressable>
               </View>
-              <Text style={styles.waiter}>{row.waiterName}</Text>
-              <Text style={styles.people}>
-                {row.guestCount}{" "}
-                {row.guestCount === 1 ? "persona" : "personas"}
-              </Text>
-              <Text style={styles.times}>
-                {formatRange(row.openedAt, row.closedAt)}
-              </Text>
-              <Text style={styles.chev}>Ver detalle ›</Text>
-            </Pressable>
+            </View>
           ))
         )}
       </ScrollView>
@@ -159,12 +213,48 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: mesasTheme.border,
-    padding: 16,
     marginBottom: 10,
+    overflow: "hidden",
   },
-  rowPressed: {
+  rowMain: {
+    padding: 16,
+    paddingBottom: 12,
+  },
+  rowMainPressed: {
     opacity: 0.92,
     backgroundColor: mesasTheme.freeTint,
+  },
+  rowActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: mesasTheme.border,
+    backgroundColor: mesasTheme.surface,
+  },
+  deleteBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#c62828",
+    backgroundColor: "#fff",
+  },
+  deleteBtnPressed: {
+    opacity: 0.88,
+    backgroundColor: "rgba(198, 40, 40, 0.06)",
+  },
+  deleteBtnDisabled: {
+    opacity: 0.5,
+  },
+  deleteBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#c62828",
   },
   rowTop: {
     flexDirection: "row",

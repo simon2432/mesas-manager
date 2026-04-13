@@ -7,7 +7,6 @@ const router = Router();
 
 router.use(authMiddleware);
 
-// Rutas literales antes de `/:id` si se agregan.
 router.patch("/me/password", usersController.changeMyPassword);
 router.post("/", usersController.create);
 

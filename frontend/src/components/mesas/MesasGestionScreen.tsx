@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,6 +22,7 @@ import { TableCard } from "@/src/components/mesas/TableCard";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
 import type { PublicTable } from "@/src/types/tables.types";
+import { useMesasCardGridLayout } from "@/src/utils/mesasCardGridLayout";
 
 type FilterKey = "all" | "active" | "inactive";
 
@@ -32,22 +32,11 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "inactive", label: "Desactivadas" },
 ];
 
-function useMesasGridLayout() {
-  const { width } = useWindowDimensions();
-  const horizontalPad = 16;
-  const maxContent = Math.min(width - horizontalPad * 2, 1200);
-  const gap = 12;
-  const minCard = 172;
-  let cols = Math.floor((maxContent + gap) / (minCard + gap));
-  cols = Math.max(1, Math.min(4, cols));
-  const cardWidth = (maxContent - gap * (cols - 1)) / cols;
-  return { cardWidth, contentWidth: maxContent, horizontalPad, gap };
-}
-
 export function MesasGestionScreen() {
   const router = useRouter();
   const qc = useQueryClient();
-  const { cardWidth, contentWidth, horizontalPad, gap } = useMesasGridLayout();
+  const { cardWidth, contentWidth, horizontalPad, gap } =
+    useMesasCardGridLayout();
 
   const [filter, setFilter] = useState<FilterKey>("all");
   const [createOpen, setCreateOpen] = useState(false);

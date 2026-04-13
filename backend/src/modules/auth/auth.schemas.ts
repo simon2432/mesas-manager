@@ -6,22 +6,30 @@ export interface JwtUserPayload {
 }
 
 export const loginBodySchema = z.object({
-  email: z.string().trim().min(1, "Email is required").email("Invalid email"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "El correo es obligatorio")
+    .email("Correo electrónico inválido"),
   password: z
     .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters"),
+    .min(1, "La contraseña es obligatoria")
+    .min(6, "La contraseña debe tener al menos 6 caracteres"),
 });
 
 export type LoginBody = z.infer<typeof loginBodySchema>;
 
 export const registerBodySchema = z.object({
-  email: z.string().trim().min(1, "Email is required").email("Invalid email"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "El correo es obligatorio")
+    .email("Correo electrónico inválido"),
   password: z
     .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters"),
-  name: z.string().trim().min(1, "Name is required").max(120),
+    .min(1, "La contraseña es obligatoria")
+    .min(6, "La contraseña debe tener al menos 6 caracteres"),
+  name: z.string().trim().min(1, "El nombre es obligatorio").max(120),
 });
 
 export type RegisterBody = z.infer<typeof registerBodySchema>;

@@ -22,13 +22,15 @@ export type PublicUserRecord = {
   updatedAt: Date;
 };
 
-export async function createUser(data: CreateUserBody): Promise<PublicUserRecord> {
+export async function createUser(
+  data: CreateUserBody,
+): Promise<PublicUserRecord> {
   const email = data.email.toLowerCase().trim();
   const name = data.name.trim();
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    throw conflict("A user with this email already exists");
+    throw conflict("Ya existe un usuario con ese correo");
   }
 
   const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
@@ -51,12 +53,15 @@ export async function changeMyPassword(
     where: { id: userId },
   });
   if (!user) {
-    throw notFound("User not found");
+    throw notFound("Usuario no encontrado");
   }
 
-  const currentOk = await bcrypt.compare(data.currentPassword, user.passwordHash);
+  const currentOk = await bcrypt.compare(
+    data.currentPassword,
+    user.passwordHash,
+  );
   if (!currentOk) {
-    throw unauthorized("Current password is incorrect");
+    throw unauthorized("La contraseña actual no es correcta");
   }
 
   const newHash = await bcrypt.hash(data.newPassword, BCRYPT_ROUNDS);

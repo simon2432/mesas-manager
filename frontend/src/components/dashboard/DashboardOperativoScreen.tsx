@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -68,26 +69,38 @@ function StatCard({
   label,
   value,
   accent,
+  compact,
+  fullWidth,
 }: {
   label: string;
   value: string;
   accent?: "orange" | "green" | "muted";
+  compact?: boolean;
+  fullWidth?: boolean;
 }) {
   return (
     <View
       style={[
         styles.card,
+        fullWidth ? styles.cardFullWidth : styles.cardHalf,
+        compact && styles.cardCompactPad,
         accent === "orange" && styles.cardAccentOrange,
         accent === "green" && styles.cardAccentGreen,
       ]}
     >
-      <Text style={styles.cardLabel}>{label}</Text>
+      <Text style={[styles.cardLabel, compact && styles.cardLabelCompact]}>
+        {label}
+      </Text>
       <Text
         style={[
           styles.cardValue,
+          compact && styles.cardValueCompact,
           accent === "orange" && styles.cardValueOrange,
           accent === "green" && styles.cardValueGreen,
         ]}
+        numberOfLines={1}
+        adjustsFontSizeToFit={compact}
+        minimumFontScale={compact ? 0.75 : 1}
       >
         {value}
       </Text>
@@ -97,7 +110,14 @@ function StatCard({
 
 type DashboardMode = "day" | "range";
 
+const COMPACT_BREAKPOINT = 480;
+const SINGLE_COLUMN_STATS_BREAKPOINT = 380;
+
 export function DashboardOperativoScreen() {
+  const { width: windowWidth } = useWindowDimensions();
+  const compact = windowWidth < COMPACT_BREAKPOINT;
+  const statsSingleColumn = windowWidth < SINGLE_COLUMN_STATS_BREAKPOINT;
+
   const dateYmd = useOperationalDayStore((s) => s.dateYmd);
   const [mode, setMode] = useState<DashboardMode>("day");
   const [rangeFrom, setRangeFrom] = useState(defaultRangeFromYmd);
@@ -160,7 +180,10 @@ export function DashboardOperativoScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          compact && styles.scrollContentCompact,
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={activeQuery.isFetching && !activeQuery.isPending}
@@ -169,12 +192,17 @@ export function DashboardOperativoScreen() {
           />
         }
       >
-        <Text style={styles.screenTitle}>Operación</Text>
+        <Text
+          style={[styles.screenTitle, compact && styles.screenTitleCompact]}
+        >
+          Operación
+        </Text>
 
-        <View style={styles.modeRow}>
+        <View style={[styles.modeRow, compact && styles.modeRowCompact]}>
           <Pressable
             style={({ pressed }) => [
               styles.modeChip,
+              compact && styles.modeChipCompact,
               mode === "day" && styles.modeChipActive,
               pressed && styles.modeChipPressed,
             ]}
@@ -183,6 +211,7 @@ export function DashboardOperativoScreen() {
             <Text
               style={[
                 styles.modeChipText,
+                compact && styles.modeChipTextCompact,
                 mode === "day" && styles.modeChipTextActive,
               ]}
             >
@@ -192,6 +221,7 @@ export function DashboardOperativoScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.modeChip,
+              compact && styles.modeChipCompact,
               mode === "range" && styles.modeChipActive,
               pressed && styles.modeChipPressed,
             ]}
@@ -200,6 +230,7 @@ export function DashboardOperativoScreen() {
             <Text
               style={[
                 styles.modeChipText,
+                compact && styles.modeChipTextCompact,
                 mode === "range" && styles.modeChipTextActive,
               ]}
             >
@@ -211,13 +242,21 @@ export function DashboardOperativoScreen() {
         {mode === "day" ? (
           <OperationalDayBar />
         ) : (
-          <View style={styles.rangeBlock}>
-            <Text style={styles.rangeHint}>
+          <View
+            style={[styles.rangeBlock, compact && styles.rangeBlockCompact]}
+          >
+            <Text
+              style={[styles.rangeHint, compact && styles.rangeHintCompact]}
+            >
               Elegí desde y hasta (inclusive). Máximo {MAX_RANGE_DAYS} días. No
               se incluyen fechas futuras.
             </Text>
-            <View style={styles.rangeRow}>
-              <Text style={styles.rangeLabel}>Desde</Text>
+            <View style={[styles.rangeRow, compact && styles.rangeRowStacked]}>
+              <Text
+                style={[styles.rangeLabel, compact && styles.rangeLabelStacked]}
+              >
+                Desde
+              </Text>
               <Pressable
                 style={({ pressed }) => [
                   styles.rangeDateBtn,
@@ -231,8 +270,12 @@ export function DashboardOperativoScreen() {
                 <Text style={styles.rangeDateSub}>{rangeFrom}</Text>
               </Pressable>
             </View>
-            <View style={styles.rangeRow}>
-              <Text style={styles.rangeLabel}>Hasta</Text>
+            <View style={[styles.rangeRow, compact && styles.rangeRowStacked]}>
+              <Text
+                style={[styles.rangeLabel, compact && styles.rangeLabelStacked]}
+              >
+                Hasta
+              </Text>
               <Pressable
                 style={({ pressed }) => [
                   styles.rangeDateBtn,
@@ -255,8 +298,16 @@ export function DashboardOperativoScreen() {
         )}
 
         {showPastDayNotice ? (
-          <View style={[styles.noticeWide, { marginBottom: 16 }]}>
-            <Text style={styles.noticeText}>
+          <View
+            style={[
+              styles.noticeWide,
+              compact && styles.noticeWideCompact,
+              { marginBottom: 16 },
+            ]}
+          >
+            <Text
+              style={[styles.noticeText, compact && styles.noticeTextCompact]}
+            >
               Para este día no se muestra el estado en vivo de mesas ni sesiones
               abiertas (solo disponible para el día actual del servidor).
             </Text>
@@ -264,8 +315,16 @@ export function DashboardOperativoScreen() {
         ) : null}
 
         {mode === "range" ? (
-          <View style={[styles.noticeWide, { marginBottom: 16 }]}>
-            <Text style={styles.noticeText}>
+          <View
+            style={[
+              styles.noticeWide,
+              compact && styles.noticeWideCompact,
+              { marginBottom: 16 },
+            ]}
+          >
+            <Text
+              style={[styles.noticeText, compact && styles.noticeTextCompact]}
+            >
               Totales del período: ítems por fecha de registro; facturación,
               personas y sesiones por fecha de apertura de la mesa.
             </Text>
@@ -286,33 +345,54 @@ export function DashboardOperativoScreen() {
               )}
             </Text>
           ) : s ? (
-            <View style={styles.grid}>
-              <StatCard label="Total mesas" value={String(s.totalTables)} />
+            <View
+              style={[
+                styles.grid,
+                statsSingleColumn && styles.gridSingleColumn,
+                compact && styles.gridCompactGap,
+              ]}
+            >
+              <StatCard
+                label="Total mesas"
+                value={String(s.totalTables)}
+                compact={compact}
+                fullWidth={statsSingleColumn}
+              />
               {showLive ? (
                 <>
                   <StatCard
                     label="Mesas ocupadas"
                     value={String(s.activeTables)}
                     accent="orange"
+                    compact={compact}
+                    fullWidth={statsSingleColumn}
                   />
                   <StatCard
                     label="Mesas libres"
                     value={String(s.freeTables)}
                     accent="green"
+                    compact={compact}
+                    fullWidth={statsSingleColumn}
                   />
                   <StatCard
                     label="Sesiones activas"
                     value={String(s.activeSessions)}
+                    compact={compact}
+                    fullWidth={statsSingleColumn}
                   />
                   <StatCard
                     label="Personas sentadas"
                     value={String(s.peopleSeated)}
+                    compact={compact}
+                    fullWidth={statsSingleColumn}
                   />
                 </>
               ) : (
                 <StatCard
                   label="Total personas ese día"
                   value={String(s.totalPeopleThatDay ?? 0)}
+                  compact={compact}
+                  fullWidth={statsSingleColumn}
                 />
               )}
               <StatCard
@@ -320,17 +400,34 @@ export function DashboardOperativoScreen() {
                   showLive ? "Ítems vendidos (día)" : "Ítems vendidos ese día"
                 }
                 value={String(s.itemsSoldToday)}
+                compact={compact}
+                fullWidth={statsSingleColumn}
               />
-              <View style={styles.cardWide}>
-                <Text style={styles.cardLabel}>
+              <View
+                style={[styles.cardWide, compact && styles.cardWideCompact]}
+              >
+                <Text
+                  style={[styles.cardLabel, compact && styles.cardLabelCompact]}
+                >
                   {showLive
                     ? "Facturación del día"
                     : "Facturación (sesiones que abrieron ese día)"}
                 </Text>
-                <Text style={[styles.cardValueLarge, styles.cardValueOrange]}>
+                <Text
+                  style={[
+                    styles.cardValueLarge,
+                    styles.cardValueOrange,
+                    compact && styles.cardValueLargeCompact,
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={compact}
+                  minimumFontScale={compact ? 0.65 : 1}
+                >
                   {formatMoney(s.revenueToday)}
                 </Text>
-                <Text style={styles.cardFoot}>
+                <Text
+                  style={[styles.cardFoot, compact && styles.cardFootCompact]}
+                >
                   Suma del total de sesiones que abrieron en la fecha elegida
                   (si el día es hoy, incluye mesas aún abiertas).
                 </Text>
@@ -350,28 +447,65 @@ export function DashboardOperativoScreen() {
             )}
           </Text>
         ) : r ? (
-          <View style={styles.grid}>
+          <View
+            style={[
+              styles.grid,
+              statsSingleColumn && styles.gridSingleColumn,
+              compact && styles.gridCompactGap,
+            ]}
+          >
             <StatCard
               label="Días en el período"
               value={String(r.dayCountInclusive)}
+              compact={compact}
+              fullWidth={statsSingleColumn}
             />
-            <StatCard label="Total mesas" value={String(r.totalTables)} />
+            <StatCard
+              label="Total mesas"
+              value={String(r.totalTables)}
+              compact={compact}
+              fullWidth={statsSingleColumn}
+            />
             <StatCard
               label="Sesiones abiertas"
               value={String(r.sessionsOpened)}
               accent="orange"
+              compact={compact}
+              fullWidth={statsSingleColumn}
             />
             <StatCard
               label="Personas (comensales)"
               value={String(r.totalPeople)}
+              compact={compact}
+              fullWidth={statsSingleColumn}
             />
-            <StatCard label="Ítems vendidos" value={String(r.itemsSold)} />
-            <View style={styles.cardWide}>
-              <Text style={styles.cardLabel}>Facturación del período</Text>
-              <Text style={[styles.cardValueLarge, styles.cardValueOrange]}>
+            <StatCard
+              label="Ítems vendidos"
+              value={String(r.itemsSold)}
+              compact={compact}
+              fullWidth={statsSingleColumn}
+            />
+            <View style={[styles.cardWide, compact && styles.cardWideCompact]}>
+              <Text
+                style={[styles.cardLabel, compact && styles.cardLabelCompact]}
+              >
+                Facturación del período
+              </Text>
+              <Text
+                style={[
+                  styles.cardValueLarge,
+                  styles.cardValueOrange,
+                  compact && styles.cardValueLargeCompact,
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={compact}
+                minimumFontScale={compact ? 0.65 : 1}
+              >
                 {formatMoney(r.revenue)}
               </Text>
-              <Text style={styles.cardFoot}>
+              <Text
+                style={[styles.cardFoot, compact && styles.cardFootCompact]}
+              >
                 Suma del total facturado en sesiones que abrieron entre{" "}
                 {formatYmdShort(r.from)} y {formatYmdShort(r.to)}.
               </Text>
@@ -420,6 +554,10 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
+  scrollContentCompact: {
+    paddingHorizontal: 12,
+    paddingBottom: 28,
+  },
   screenTitle: {
     fontSize: 22,
     fontWeight: "800",
@@ -427,10 +565,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 10,
   },
+  screenTitleCompact: {
+    fontSize: 19,
+    marginBottom: 8,
+  },
   modeRow: {
     flexDirection: "row",
     gap: 8,
     marginBottom: 14,
+  },
+  modeRowCompact: {
+    marginBottom: 10,
+    gap: 6,
   },
   modeChip: {
     flex: 1,
@@ -440,6 +586,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: mesasTheme.border,
     backgroundColor: "#fff",
+  },
+  modeChipCompact: {
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 9,
   },
   modeChipActive: {
     borderColor: welcomeTheme.orange,
@@ -454,6 +605,9 @@ const styles = StyleSheet.create({
   modeChipTextActive: {
     color: welcomeTheme.orange,
   },
+  modeChipTextCompact: {
+    fontSize: 14,
+  },
   rangeBlock: {
     marginBottom: 14,
     padding: 14,
@@ -462,11 +616,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: mesasTheme.border,
   },
+  rangeBlockCompact: {
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
   rangeHint: {
     fontSize: 13,
     color: mesasTheme.muted,
     lineHeight: 19,
     marginBottom: 14,
+  },
+  rangeHintCompact: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 12,
   },
   rangeRow: {
     flexDirection: "row",
@@ -474,14 +638,25 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 12,
   },
+  rangeRowStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 6,
+  },
   rangeLabel: {
     width: 52,
     fontSize: 14,
     fontWeight: "700",
     color: welcomeTheme.textDark,
   },
+  rangeLabelStacked: {
+    width: "100%",
+    fontSize: 12,
+    marginBottom: 2,
+  },
   rangeDateBtn: {
     flex: 1,
+    alignSelf: "stretch",
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 10,
@@ -514,15 +689,32 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 12,
   },
+  gridSingleColumn: {
+    flexDirection: "column",
+    flexWrap: "nowrap",
+  },
+  gridCompactGap: {
+    gap: 8,
+  },
   card: {
-    width: "47%",
-    flexGrow: 1,
-    minWidth: 148,
     backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: mesasTheme.border,
     padding: 16,
+  },
+  cardHalf: {
+    width: "47%",
+    flexGrow: 1,
+    minWidth: 0,
+  },
+  cardFullWidth: {
+    width: "100%",
+    minWidth: 0,
+  },
+  cardCompactPad: {
+    padding: 12,
+    borderRadius: 10,
   },
   cardWide: {
     width: "100%",
@@ -532,6 +724,10 @@ const styles = StyleSheet.create({
     borderColor: mesasTheme.border,
     padding: 16,
   },
+  cardWideCompact: {
+    padding: 12,
+    borderRadius: 10,
+  },
   noticeWide: {
     width: "100%",
     backgroundColor: "rgba(92, 100, 112, 0.08)",
@@ -540,10 +736,18 @@ const styles = StyleSheet.create({
     borderColor: mesasTheme.border,
     padding: 14,
   },
+  noticeWideCompact: {
+    padding: 12,
+    borderRadius: 10,
+  },
   noticeText: {
     fontSize: 13,
     color: mesasTheme.muted,
     lineHeight: 19,
+  },
+  noticeTextCompact: {
+    fontSize: 12,
+    lineHeight: 17,
   },
   cardAccentOrange: {
     borderColor: "rgba(245, 124, 0, 0.35)",
@@ -561,16 +765,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 8,
   },
+  cardLabelCompact: {
+    fontSize: 10,
+    letterSpacing: 0.35,
+    marginBottom: 6,
+    lineHeight: 14,
+  },
   cardValue: {
     fontSize: 26,
     fontWeight: "800",
     color: welcomeTheme.textDark,
     letterSpacing: -0.5,
   },
+  cardValueCompact: {
+    fontSize: 21,
+    letterSpacing: -0.35,
+  },
   cardValueLarge: {
     fontSize: 28,
     fontWeight: "800",
     letterSpacing: -0.5,
+  },
+  cardValueLargeCompact: {
+    fontSize: 22,
+    letterSpacing: -0.4,
   },
   cardValueOrange: {
     color: welcomeTheme.orange,
@@ -583,6 +801,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: mesasTheme.muted,
     lineHeight: 17,
+  },
+  cardFootCompact: {
+    marginTop: 8,
+    fontSize: 11,
+    lineHeight: 15,
   },
   loader: { marginTop: 40 },
   err: {

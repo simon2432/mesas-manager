@@ -65,7 +65,7 @@ async function findLayoutRow(id: number): Promise<LayoutRow> {
     include: layoutInclude,
   });
   if (!row) {
-    throw notFound("Layout not found");
+    throw notFound("Layout no encontrado");
   }
   return row as LayoutRow;
 }
@@ -83,11 +83,13 @@ export async function getLayoutById(id: number): Promise<PublicLayout> {
   return toPublicLayout(row);
 }
 
-export async function createLayout(data: CreateLayoutBody): Promise<PublicLayout> {
+export async function createLayout(
+  data: CreateLayoutBody,
+): Promise<PublicLayout> {
   const name = data.name.trim();
   const existing = await prisma.layout.findFirst({ where: { name } });
   if (existing) {
-    throw conflict("A layout with this name already exists");
+    throw conflict("Ya existe un layout con ese nombre");
   }
 
   const row = await prisma.layout.create({
@@ -111,7 +113,7 @@ export async function updateLayout(
     },
   });
   if (duplicate) {
-    throw conflict("A layout with this name already exists");
+    throw conflict("Ya existe un layout con ese nombre");
   }
 
   const row = await prisma.layout.update({
@@ -125,7 +127,7 @@ export async function updateLayout(
 export async function deleteLayout(id: number): Promise<void> {
   const layout = await prisma.layout.findUnique({ where: { id } });
   if (!layout) {
-    throw notFound("Layout not found");
+    throw notFound("Layout no encontrado");
   }
   await prisma.layout.delete({ where: { id } });
 }
@@ -139,7 +141,7 @@ export async function setLayoutTables(
   return prisma.$transaction(async (tx) => {
     const layout = await tx.layout.findUnique({ where: { id: layoutId } });
     if (!layout) {
-      throw notFound("Layout not found");
+      throw notFound("Layout no encontrado");
     }
 
     if (uniqueIds.length > 0) {
@@ -148,11 +150,11 @@ export async function setLayoutTables(
         select: { id: true, isActive: true },
       });
       if (tables.length !== uniqueIds.length) {
-        throw badRequest("One or more tables do not exist");
+        throw badRequest("Una o más mesas no existen");
       }
       const inactive = tables.filter((t) => !t.isActive);
       if (inactive.length > 0) {
-        throw badRequest("All tables in a layout must be active");
+        throw badRequest("Todas las mesas del layout deben estar activas");
       }
     }
 

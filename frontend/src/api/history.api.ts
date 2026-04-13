@@ -41,3 +41,9 @@ export async function fetchDailyClosedSessionDetail(
   );
   return data.session;
 }
+
+export async function deleteDailyClosedSession(
+  sessionId: number,
+): Promise<void> {
+  await api.post(`/history/daily/${sessionId}/delete`);
+}

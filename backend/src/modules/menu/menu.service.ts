@@ -58,7 +58,7 @@ export async function getMenuItemById(id: number): Promise<PublicMenuItem> {
     select: menuItemPublicSelect,
   });
   if (!row) {
-    throw notFound("Menu item not found");
+    throw notFound("Ítem de menú no encontrado");
   }
   return toPublicMenuItem(row);
 }
@@ -71,7 +71,7 @@ export async function createMenuItem(
     where: { name },
   });
   if (existing) {
-    throw conflict("A menu item with this name already exists");
+    throw conflict("Ya existe un ítem con ese nombre");
   }
 
   const description =
@@ -107,7 +107,7 @@ export async function updateMenuItem(
       },
     });
     if (duplicate) {
-      throw conflict("A menu item with this name already exists");
+      throw conflict("Ya existe un ítem con ese nombre");
     }
   }
 
@@ -141,7 +141,9 @@ export async function updateMenuItem(
   return toPublicMenuItem(row);
 }
 
-export async function toggleMenuItemActive(id: number): Promise<PublicMenuItem> {
+export async function toggleMenuItemActive(
+  id: number,
+): Promise<PublicMenuItem> {
   const item = await getMenuItemById(id);
   const row = await prisma.menuItem.update({
     where: { id },

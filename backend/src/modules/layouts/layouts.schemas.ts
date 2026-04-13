@@ -5,13 +5,13 @@ export const layoutIdParamSchema = z.object({
 });
 
 export const createLayoutBodySchema = z.object({
-  name: z.string().trim().min(1, "name is required").max(120),
+  name: z.string().trim().min(1, "El nombre es obligatorio").max(120),
 });
 
 export type CreateLayoutBody = z.infer<typeof createLayoutBodySchema>;
 
 export const updateLayoutBodySchema = z.object({
-  name: z.string().trim().min(1, "name is required").max(120),
+  name: z.string().trim().min(1, "El nombre es obligatorio").max(120),
 });
 
 export type UpdateLayoutBody = z.infer<typeof updateLayoutBodySchema>;

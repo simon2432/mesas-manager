@@ -8,18 +8,18 @@ export class HttpError extends Error {
   }
 }
 
-export function unauthorized(message = "Invalid credentials"): HttpError {
+export function unauthorized(message = "Credenciales inválidas"): HttpError {
   return new HttpError(401, message);
 }
 
-export function notFound(message = "Not found"): HttpError {
+export function notFound(message = "Recurso no encontrado"): HttpError {
   return new HttpError(404, message);
 }
 
-export function conflict(message = "Conflict"): HttpError {
+export function conflict(message = "Conflicto"): HttpError {
   return new HttpError(409, message);
 }
 
-export function badRequest(message = "Bad request"): HttpError {
+export function badRequest(message = "Solicitud inválida"): HttpError {
   return new HttpError(400, message);
 }

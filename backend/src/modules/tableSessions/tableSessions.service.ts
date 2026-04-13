@@ -62,13 +62,13 @@ export async function openSession(
       where: { id: data.tableId },
     });
     if (!table) {
-      throw notFound("Table not found");
+      throw notFound("Mesa no encontrada");
     }
     if (!table.isActive) {
-      throw badRequest("Table is not active");
+      throw badRequest("La mesa no está activa");
     }
     if (table.status !== TABLE_STATUS.FREE) {
-      throw conflict("Table is not available");
+      throw conflict("La mesa no está disponible");
     }
 
     const existingOpen = await tx.tableSession.findFirst({
@@ -78,17 +78,17 @@ export async function openSession(
       },
     });
     if (existingOpen) {
-      throw conflict("This table already has an open session");
+      throw conflict("Esta mesa ya tiene una sesión abierta");
     }
 
     const waiter = await tx.waiter.findUnique({
       where: { id: data.waiterId },
     });
     if (!waiter) {
-      throw notFound("Waiter not found");
+      throw notFound("Mesero no encontrado");
     }
     if (!waiter.isActive) {
-      throw badRequest("Waiter is not active");
+      throw badRequest("El mesero no está activo");
     }
 
     const session = await tx.tableSession.create({
@@ -162,20 +162,20 @@ export async function addSessionItem(
       where: { id: sessionId },
     });
     if (!session) {
-      throw notFound("Session not found");
+      throw notFound("Sesión no encontrada");
     }
     if (session.status !== SESSION_STATUS.OPEN) {
-      throw conflict("Cannot add items to a closed session");
+      throw conflict("No se pueden agregar ítems a una sesión cerrada");
     }
 
     const menuItem = await tx.menuItem.findUnique({
       where: { id: body.menuItemId },
     });
     if (!menuItem) {
-      throw notFound("Menu item not found");
+      throw notFound("Ítem de menú no encontrado");
     }
     if (!menuItem.isActive) {
-      throw badRequest("Menu item is not active");
+      throw badRequest("El ítem de menú no está activo");
     }
 
     const unitPriceNum = Number(menuItem.price);
@@ -218,17 +218,17 @@ export async function updateSessionItem(
       where: { id: sessionId },
     });
     if (!session) {
-      throw notFound("Session not found");
+      throw notFound("Sesión no encontrada");
     }
     if (session.status !== SESSION_STATUS.OPEN) {
-      throw conflict("Cannot modify items on a closed session");
+      throw conflict("No se pueden modificar ítems en una sesión cerrada");
     }
 
     const existing = await tx.sessionItem.findFirst({
       where: { id: itemId, tableSessionId: sessionId },
     });
     if (!existing) {
-      throw notFound("Session item not found");
+      throw notFound("Línea de consumo no encontrada");
     }
 
     const nextQuantity =
@@ -269,17 +269,17 @@ export async function deleteSessionItem(
       where: { id: sessionId },
     });
     if (!session) {
-      throw notFound("Session not found");
+      throw notFound("Sesión no encontrada");
     }
     if (session.status !== SESSION_STATUS.OPEN) {
-      throw conflict("Cannot modify items on a closed session");
+      throw conflict("No se pueden modificar ítems en una sesión cerrada");
     }
 
     const existing = await tx.sessionItem.findFirst({
       where: { id: itemId, tableSessionId: sessionId },
     });
     if (!existing) {
-      throw notFound("Session item not found");
+      throw notFound("Línea de consumo no encontrada");
     }
 
     await tx.sessionItem.delete({ where: { id: itemId } });
@@ -309,10 +309,10 @@ export async function closeSession(
       },
     });
     if (!session) {
-      throw notFound("Session not found");
+      throw notFound("Sesión no encontrada");
     }
     if (session.status !== SESSION_STATUS.OPEN) {
-      throw conflict("Session is already closed");
+      throw conflict("La sesión ya está cerrada");
     }
 
     const total = session.items.reduce(
@@ -364,7 +364,7 @@ export async function getSessionById(sessionId: number) {
     },
   });
   if (!session) {
-    throw notFound("Session not found");
+    throw notFound("Sesión no encontrada");
   }
 
   const items = session.items.map((i) => {

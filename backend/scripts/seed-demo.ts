@@ -1,16 +1,7 @@
 /**
- * Carga datos de demostración para probar Mesas Manager sin configurar todo a mano.
- *
- * Uso (desde la carpeta backend, con .env y migraciones aplicadas):
- *   npm run db:seed
- *
- * En producción solo corre si definís ALLOW_DEMO_SEED=1.
- *
- * Credenciales de acceso (tras el seed):
- *   Email:    demo@mesas.local
- *   Password: Demo1234
+ * Datos demo para desarrollo. Desde `backend`: `npm run db:seed` (requiere .env y migraciones).
+ * En producción: solo con `ALLOW_DEMO_SEED=1`. Usuario: demo@mesas.local / Demo1234
  */
-
 import "dotenv/config";
 
 import bcrypt from "bcrypt";
@@ -27,7 +18,10 @@ const DEMO_USER = {
 } as const;
 
 function assertSafeToRun(): void {
-  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_SEED !== "1") {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_DEMO_SEED !== "1"
+  ) {
     console.error(
       "[seed] No se ejecuta en NODE_ENV=production sin ALLOW_DEMO_SEED=1.",
     );
@@ -35,7 +29,6 @@ function assertSafeToRun(): void {
   }
 }
 
-/** Mediodía / tarde local en un día relativo a hoy (para closedAt / openedAt coherentes). */
 function localDaysAgo(days: number, hour: number, minute = 0): Date {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -112,9 +105,21 @@ async function seedMenu(): Promise<Map<string, number>> {
     description: string | null;
     price: number;
   }[] = [
-    { name: "Empanadas (3 u.)", description: "Carne, pollo o jamón y queso", price: 4500 },
-    { name: "Milanesa napolitana", description: "Con fritas o ensalada", price: 12500 },
-    { name: "Ensalada Caesar", description: "Lechuga, parmesano, croutons", price: 8200 },
+    {
+      name: "Empanadas (3 u.)",
+      description: "Carne, pollo o jamón y queso",
+      price: 4500,
+    },
+    {
+      name: "Milanesa napolitana",
+      description: "Con fritas o ensalada",
+      price: 12500,
+    },
+    {
+      name: "Ensalada Caesar",
+      description: "Lechuga, parmesano, croutons",
+      price: 8200,
+    },
     { name: "Flan casero", description: null, price: 3800 },
     { name: "Coca-Cola 500 ml", description: null, price: 2800 },
     { name: "Agua sin gas", description: null, price: 2200 },
@@ -356,7 +361,10 @@ async function seedHistory(
       daysAgo: 1,
       openHour: 12,
       closeHour: 13,
-      lines: [{ name: "Ensalada Caesar", qty: 1 }, { name: "Agua sin gas", qty: 2 }],
+      lines: [
+        { name: "Ensalada Caesar", qty: 1 },
+        { name: "Agua sin gas", qty: 2 },
+      ],
     },
     {
       tableNumber: 1,
@@ -378,7 +386,10 @@ async function seedHistory(
       daysAgo: 1,
       openHour: 15,
       closeHour: 16,
-      lines: [{ name: "Café espresso", qty: 2 }, { name: "Flan casero", qty: 1 }],
+      lines: [
+        { name: "Café espresso", qty: 2 },
+        { name: "Flan casero", qty: 1 },
+      ],
     },
   ];
 
@@ -423,7 +434,9 @@ async function main(): Promise<void> {
   console.log("[seed] 1 mesa ocupada con sesión abierta (mesa 8).");
 
   console.log("\n--- Listo ---");
-  console.log(`Iniciá sesión en la app con:\n  Email:    ${DEMO_USER.email}\n  Password: ${DEMO_USER.password}`);
+  console.log(
+    `Iniciá sesión en la app con:\n  Email:    ${DEMO_USER.email}\n  Password: ${DEMO_USER.password}`,
+  );
   console.log(
     "En Historial probá fechas de los últimos 4–5 días (según el calendario del servidor).",
   );

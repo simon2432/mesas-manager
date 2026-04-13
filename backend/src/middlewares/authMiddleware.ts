@@ -11,13 +11,13 @@ export function authMiddleware(
 ): void {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) {
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(401).json({ message: "Credenciales inválidas" });
     return;
   }
 
   const token = header.slice("Bearer ".length).trim();
   if (!token) {
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(401).json({ message: "Credenciales inválidas" });
     return;
   }
 
@@ -27,22 +27,20 @@ export function authMiddleware(
 
     const userId = decoded.userId;
     if (userId === undefined || userId === null) {
-      res.status(401).json({ message: "Invalid credentials" });
+      res.status(401).json({ message: "Credenciales inválidas" });
       return;
     }
 
     const id = typeof userId === "number" ? userId : Number(userId);
     if (!Number.isFinite(id)) {
-      res.status(401).json({ message: "Invalid credentials" });
+      res.status(401).json({ message: "Credenciales inválidas" });
       return;
     }
 
     req.user =
-      typeof decoded.email === "string"
-        ? { id, email: decoded.email }
-        : { id };
+      typeof decoded.email === "string" ? { id, email: decoded.email } : { id };
     next();
   } catch {
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(401).json({ message: "Credenciales inválidas" });
   }
 }
