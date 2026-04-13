@@ -20,18 +20,10 @@ import {
 } from "@/src/api/menu.api";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
-
 import { useConfirm } from "@/src/components/ui/ConfirmProvider";
+import { formatMoney } from "@/src/utils/formatMoney";
 
 import { MenuItemFormModal } from "./MenuItemFormModal";
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
 
 export function MenuCatalogScreen() {
   const qc = useQueryClient();

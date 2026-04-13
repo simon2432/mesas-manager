@@ -15,19 +15,14 @@ import { useNavigation } from "@react-navigation/native";
 
 import { fetchTableCurrent } from "@/src/api/tables.api";
 import type { SessionItemPublic } from "@/src/api/tableSessions.api";
+import { fetchWaiters } from "@/src/api/waiters.api";
 import { AddConsumptionModal } from "@/src/components/mesaSession/AddConsumptionModal";
 import { CloseSessionModal } from "@/src/components/mesaSession/CloseSessionModal";
 import { EditItemModal } from "@/src/components/mesaSession/EditItemModal";
+import { EditSessionMetaModal } from "@/src/components/mesaSession/EditSessionMetaModal";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
+import { formatMoney } from "@/src/utils/formatMoney";
 
 function formatTime(iso: string) {
   try {
@@ -50,12 +45,20 @@ export default function MesaDetailScreen() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [editMetaOpen, setEditMetaOpen] = useState(false);
   const [editItem, setEditItem] = useState<SessionItemPublic | null>(null);
 
   const query = useQuery({
     queryKey: ["tables", tableId, "current"],
     queryFn: () => fetchTableCurrent(tableId),
     enabled: validId,
+  });
+
+  const waitersQuery = useQuery({
+    queryKey: ["waiters"],
+    queryFn: fetchWaiters,
+    enabled: validId && Boolean(query.data?.openSession),
+    staleTime: 60_000,
   });
 
   const refreshDetail = () => {
@@ -140,6 +143,17 @@ export default function MesaDetailScreen() {
                   value={formatTime(session.openedAt)}
                   last
                 />
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.editMetaBtn,
+                    pressed && styles.actionPressed,
+                  ]}
+                  onPress={() => setEditMetaOpen(true)}
+                >
+                  <Text style={styles.editMetaBtnText}>
+                    Cambiar mesero o cantidad de personas
+                  </Text>
+                </Pressable>
               </View>
             </View>
 
@@ -245,6 +259,18 @@ export default function MesaDetailScreen() {
             onClose={() => setCloseOpen(false)}
             onClosed={refreshDetail}
           />
+          <EditSessionMetaModal
+            visible={editMetaOpen}
+            sessionId={session.id}
+            tableNumber={table.number}
+            capacity={table.capacity}
+            initialWaiterId={session.waiterId}
+            initialGuestCount={session.guestCount}
+            waiters={waitersQuery.data ?? []}
+            waitersLoading={waitersQuery.isPending}
+            onClose={() => setEditMetaOpen(false)}
+            onSaved={refreshDetail}
+          />
         </>
       ) : null}
     </SafeAreaView>
@@ -317,6 +343,16 @@ const styles = StyleSheet.create({
   },
   summaryRowLast: {
     borderBottomWidth: 0,
+  },
+  editMetaBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    alignItems: "center",
+  },
+  editMetaBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: welcomeTheme.orange,
   },
   summaryLabel: {
     fontSize: 14,

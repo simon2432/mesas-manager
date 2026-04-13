@@ -25,6 +25,7 @@ import {
 } from "@/src/api/layouts.api";
 import type { PublicTable } from "@/src/types/tables.types";
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
 import {
   layoutNameFormSchema,
@@ -120,6 +121,7 @@ export function LayoutFormModal({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

@@ -22,6 +22,7 @@ import {
   type AuthSuccessResponse,
 } from "@/src/api/auth.api";
 import { authColors } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import {
   registerFormSchema,
   type RegisterFormValues,
@@ -72,6 +73,7 @@ export function RegisterModal({ visible, onClose, onSuccess }: Props) {
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

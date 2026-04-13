@@ -14,15 +14,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getApiErrorMessage } from "@/src/api/auth.api";
 import { closeTableSession } from "@/src/api/tableSessions.api";
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
+import { formatMoney } from "@/src/utils/formatMoney";
 
 type Props = {
   visible: boolean;
@@ -69,6 +63,7 @@ export function CloseSessionModal({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="fade"
       transparent

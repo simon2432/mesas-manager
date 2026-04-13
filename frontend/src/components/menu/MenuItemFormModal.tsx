@@ -20,6 +20,7 @@ import {
   updateMenuItem,
   type PublicMenuItem,
 } from "@/src/api/menu.api";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import {
   mesasModalStyles,
   mesasTheme,
@@ -106,6 +107,7 @@ export function MenuItemFormModal({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

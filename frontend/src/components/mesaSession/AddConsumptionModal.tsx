@@ -20,6 +20,7 @@ import { getApiErrorMessage } from "@/src/api/auth.api";
 import { fetchMenuItems } from "@/src/api/menu.api";
 import { addSessionItem } from "@/src/api/tableSessions.api";
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import {
   mesasModalStyles,
   mesasTheme,
@@ -29,14 +30,7 @@ import {
   type AddConsumptionFormInput,
   type AddConsumptionParsed,
 } from "@/src/schemas/mesaSession.schema";
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
+import { formatMoney } from "@/src/utils/formatMoney";
 
 type Props = {
   visible: boolean;
@@ -118,6 +112,7 @@ export function AddConsumptionModal({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

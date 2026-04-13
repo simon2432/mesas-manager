@@ -4,6 +4,7 @@ import { badRequest, conflict, notFound } from "../../utils/httpError";
 import type {
   AddSessionItemBody,
   OpenSessionBody,
+  UpdateOpenSessionBody,
   UpdateSessionItemBody,
 } from "./tableSessions.schemas";
 
@@ -69,6 +70,11 @@ export async function openSession(
     }
     if (table.status !== TABLE_STATUS.FREE) {
       throw conflict("La mesa no está disponible");
+    }
+    if (data.guestCount > table.capacity) {
+      throw badRequest(
+        `La mesa tiene capacidad para ${table.capacity} persona${table.capacity === 1 ? "" : "s"}`,
+      );
     }
 
     const existingOpen = await tx.tableSession.findFirst({
@@ -258,6 +264,73 @@ export async function updateSessionItem(
       item: toSessionItemPublic(updated),
     };
   });
+}
+
+export async function updateOpenSessionMeta(
+  sessionId: number,
+  data: UpdateOpenSessionBody,
+): Promise<PublicOpenSession> {
+  const session = await prisma.tableSession.findUnique({
+    where: { id: sessionId },
+  });
+  if (!session) {
+    throw notFound("Sesión no encontrada");
+  }
+  if (session.status !== SESSION_STATUS.OPEN) {
+    throw conflict("Solo se puede editar una sesión abierta");
+  }
+
+  const table = await prisma.restaurantTable.findUnique({
+    where: { id: session.tableId },
+  });
+  if (!table) {
+    throw notFound("Mesa no encontrada");
+  }
+
+  const nextGuestCount =
+    data.guestCount !== undefined ? data.guestCount : session.guestCount;
+  if (nextGuestCount < 1 || nextGuestCount > table.capacity) {
+    throw badRequest(
+      `La cantidad de personas debe estar entre 1 y ${table.capacity} (capacidad de la mesa)`,
+    );
+  }
+
+  if (data.waiterId !== undefined) {
+    const waiter = await prisma.waiter.findUnique({
+      where: { id: data.waiterId },
+    });
+    if (!waiter) {
+      throw notFound("Mesero no encontrado");
+    }
+    if (!waiter.isActive) {
+      throw badRequest("El mesero no está activo");
+    }
+  }
+
+  const updated = await prisma.tableSession.update({
+    where: { id: sessionId },
+    data: {
+      ...(data.guestCount !== undefined ? { guestCount: data.guestCount } : {}),
+      ...(data.waiterId !== undefined ? { waiterId: data.waiterId } : {}),
+    },
+    include: {
+      waiter: { select: { id: true, name: true, isActive: true } },
+    },
+  });
+
+  return {
+    id: updated.id,
+    tableId: updated.tableId,
+    waiterId: updated.waiterId,
+    guestCount: updated.guestCount,
+    openedAt: updated.openedAt,
+    closedAt: updated.closedAt,
+    status: updated.status,
+    total: Number(updated.total),
+    createdAt: updated.createdAt,
+    updatedAt: updated.updatedAt,
+    waiter: updated.waiter,
+  };
 }
 
 export async function deleteSessionItem(

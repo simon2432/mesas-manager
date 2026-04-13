@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { badRequest, conflict, notFound } from "../../utils/httpError";
+import { conflict, notFound } from "../../utils/httpError";
 import type { CreateWaiterBody, UpdateWaiterBody } from "./waiters.schemas";
 
 const waiterPublicSelect = {
@@ -60,10 +60,6 @@ export async function updateWaiter(
   id: number,
   data: UpdateWaiterBody,
 ): Promise<PublicWaiter> {
-  if (data.name === undefined) {
-    throw badRequest("No hay campos para actualizar");
-  }
-
   const name = data.name.trim();
   await getWaiterById(id);
 

@@ -12,6 +12,7 @@ router.post("/:id/items", tableSessionsController.addItem);
 router.patch("/:id/items/:itemId", tableSessionsController.updateItem);
 router.delete("/:id/items/:itemId", tableSessionsController.removeItem);
 router.post("/:id/close", tableSessionsController.close);
+router.patch("/:id", tableSessionsController.updateMeta);
 router.get("/:id", tableSessionsController.getById);
 
 export default router;

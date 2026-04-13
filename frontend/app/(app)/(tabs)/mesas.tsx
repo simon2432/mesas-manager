@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -40,7 +41,9 @@ function HeaderDashStat({
   compact?: boolean;
 }) {
   return (
-    <View style={styles.headerStat}>
+    <View
+      style={[styles.headerStat, Platform.OS === "web" && styles.headerStatWeb]}
+    >
       <Text
         style={[
           styles.headerStatLabel,
@@ -156,8 +159,6 @@ export default function MesasScreen() {
       ? `${summary.activeTables}/${summary.totalTables}`
       : "—";
 
-  const ordersToday = summary != null ? String(summary.itemsSoldToday) : "—";
-
   const invalidateMesas = () => {
     qc.invalidateQueries({ queryKey: ["tables"] });
     qc.invalidateQueries({ queryKey: ["dashboard"] });
@@ -182,6 +183,7 @@ export default function MesasScreen() {
             style={[
               styles.headerStatsRow,
               compactTopBar && styles.headerStatsRowFullWidth,
+              Platform.OS === "web" && styles.headerStatsRowWeb,
             ]}
           >
             {summaryQuery.isPending ? (
@@ -199,11 +201,6 @@ export default function MesasScreen() {
                   compact={compactTopBar}
                   label="OCUP. GENTE"
                   value={occupancyPeople}
-                />
-                <HeaderDashStat
-                  compact={compactTopBar}
-                  label="CANT. ÍTEMS VENDIDOS"
-                  value={ordersToday}
                 />
               </>
             )}
@@ -272,7 +269,7 @@ export default function MesasScreen() {
                     <View style={styles.layoutFrameHeaderTitles}>
                       <Text style={styles.layoutFrameLabel}>
                         {appliedLayouts.length > 1
-                          ? `Layout activo ${idx + 1}`
+                          ? `Layout activo ${idx + 1} de ${appliedLayouts.length}`
                           : "Layout activo"}
                       </Text>
                       <Text style={styles.layoutFrameTitle}>
@@ -446,6 +443,13 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "stretch",
   },
+  headerStatsRowWeb: {
+    maxWidth: 360,
+    width: "100%",
+    alignSelf: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
   headerStatsLoading: {
     flex: 1,
     alignItems: "center",
@@ -462,9 +466,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     backgroundColor: "rgba(255,255,255,0.96)",
     borderRadius: 11,
+  },
+  headerStatWeb: {
+    flexGrow: 1,
+    flexBasis: 0,
+    maxWidth: 172,
+    minWidth: 120,
   },
   headerStatLabel: {
     flex: 1,

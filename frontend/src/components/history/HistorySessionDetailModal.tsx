@@ -13,15 +13,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { fetchDailyClosedSessionDetail } from "@/src/api/history.api";
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
+import { formatMoney } from "@/src/utils/formatMoney";
 
 function formatDt(iso: string) {
   try {
@@ -59,6 +53,7 @@ export function HistorySessionDetailModal({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

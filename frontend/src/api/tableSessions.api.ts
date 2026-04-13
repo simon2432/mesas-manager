@@ -41,6 +41,11 @@ export type UpdateSessionItemBody = {
   note?: string | null;
 };
 
+export type UpdateOpenSessionMetaBody = {
+  waiterId?: number;
+  guestCount?: number;
+};
+
 export type CloseSessionSummary = {
   total: number;
   guestCount: number;
@@ -98,4 +103,15 @@ export async function closeTableSession(
     {},
   );
   return data;
+}
+
+export async function patchOpenSessionMeta(
+  sessionId: number,
+  body: UpdateOpenSessionMetaBody,
+): Promise<PublicOpenSession> {
+  const { data } = await api.patch<{ session: PublicOpenSession }>(
+    `/table-sessions/${sessionId}`,
+    body,
+  );
+  return data.session;
 }

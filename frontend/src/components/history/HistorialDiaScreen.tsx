@@ -24,16 +24,9 @@ import { OperationalDayBar } from "@/src/components/ui/OperationalDayBar";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
 import { useOperationalDayStore } from "@/src/store/operationalDay.store";
+import { formatMoney } from "@/src/utils/formatMoney";
 
 import { HistorySessionDetailModal } from "./HistorySessionDetailModal";
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
 
 function formatRange(opened: string, closed: string) {
   try {
@@ -241,12 +234,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#c62828",
+    borderColor: mesasTheme.danger,
     backgroundColor: "#fff",
   },
   deleteBtnPressed: {
     opacity: 0.88,
-    backgroundColor: "rgba(198, 40, 40, 0.06)",
+    backgroundColor: "rgba(176, 0, 32, 0.06)",
   },
   deleteBtnDisabled: {
     opacity: 0.5,
@@ -254,7 +247,7 @@ const styles = StyleSheet.create({
   deleteBtnText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#c62828",
+    color: mesasTheme.danger,
   },
   rowTop: {
     flexDirection: "row",
@@ -296,7 +289,7 @@ const styles = StyleSheet.create({
   },
   loader: { marginTop: 40 },
   err: {
-    color: "#b00020",
+    color: mesasTheme.danger,
     fontSize: 15,
     marginTop: 16,
   },

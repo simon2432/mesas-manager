@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { mesasTheme } from "@/src/constants/mesasTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 
 export type ConfirmModalViewProps = {
   visible: boolean;
@@ -36,6 +37,7 @@ export function ConfirmModalView({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       transparent
       animationType="fade"

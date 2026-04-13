@@ -17,45 +17,45 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { PublicWaiter } from "@/src/api/waiters.api";
 import { getApiErrorMessage } from "@/src/api/auth.api";
-import { openTableSession } from "@/src/api/tableSessions.api";
+import { patchOpenSessionMeta } from "@/src/api/tableSessions.api";
 import { welcomeTheme } from "@/src/constants/authTheme";
 import { modalStackingProps } from "@/src/constants/modalPresentation";
-import {
-  mesasModalStyles,
-  mesasTheme,
-} from "@/src/constants/mesasTheme";
+import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
 import {
   openSessionFormSchemaForCapacity,
   type OpenSessionFormInput,
 } from "@/src/schemas/mesas.schema";
-import type { PublicTable } from "@/src/types/tables.types";
 
 type Props = {
   visible: boolean;
-  table: PublicTable | null;
+  sessionId: number;
+  tableNumber: number;
+  capacity: number;
+  initialWaiterId: number;
+  initialGuestCount: number;
   waiters: PublicWaiter[];
   waitersLoading: boolean;
   onClose: () => void;
-  onOpened: (tableId: number) => void;
+  onSaved: () => void;
 };
 
-type ParsedOpenSession = {
-  waiterId: number;
-  guestCount: number;
-};
+type Parsed = { waiterId: number; guestCount: number };
 
-export function OpenSessionModal({
+export function EditSessionMetaModal({
   visible,
-  table,
+  sessionId,
+  tableNumber,
+  capacity,
+  initialWaiterId,
+  initialGuestCount,
   waiters,
   waitersLoading,
   onClose,
-  onOpened,
+  onSaved,
 }: Props) {
   const insets = useSafeAreaInsets();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const capacity = table?.capacity ?? 1;
   const schema = useMemo(
     () => openSessionFormSchemaForCapacity(capacity),
     [capacity],
@@ -74,9 +74,12 @@ export function OpenSessionModal({
     setValue,
     watch,
     formState: { isSubmitting },
-  } = useForm<OpenSessionFormInput, unknown, ParsedOpenSession>({
+  } = useForm<OpenSessionFormInput, unknown, Parsed>({
     resolver: zodResolver(schema),
-    defaultValues: { waiterId: 0, guestCount: "2" },
+    defaultValues: {
+      waiterId: initialWaiterId,
+      guestCount: String(initialGuestCount),
+    },
   });
 
   const { errors } = useFormState({ control });
@@ -87,15 +90,26 @@ export function OpenSessionModal({
   }, [register]);
 
   useEffect(() => {
-    if (visible && table) {
-      const first = activeWaiters[0];
+    if (visible) {
+      const current = waiters.find((w) => w.id === initialWaiterId);
+      const waiterIdDefault =
+        current?.isActive === true
+          ? initialWaiterId
+          : activeWaiters[0]?.id ?? 0;
       reset({
-        waiterId: first?.id ?? 0,
-        guestCount: "2",
+        waiterId: waiterIdDefault,
+        guestCount: String(initialGuestCount),
       });
       setSubmitError(null);
     }
-  }, [visible, table, activeWaiters, reset]);
+  }, [
+    visible,
+    initialWaiterId,
+    initialGuestCount,
+    reset,
+    waiters,
+    activeWaiters,
+  ]);
 
   const close = () => {
     setSubmitError(null);
@@ -103,26 +117,23 @@ export function OpenSessionModal({
   };
 
   const onSubmit = handleSubmit(async (values) => {
-    if (!table) return;
     setSubmitError(null);
     try {
-      await openTableSession({
-        tableId: table.id,
+      await patchOpenSessionMeta(sessionId, {
         waiterId: values.waiterId,
         guestCount: values.guestCount,
       });
-      onOpened(table.id);
+      onSaved();
       onClose();
     } catch (e) {
       setSubmitError(
-        getApiErrorMessage(e, "No se pudo abrir la mesa. Intentá de nuevo."),
+        getApiErrorMessage(
+          e,
+          "No se pudo actualizar la sesión. Intentá de nuevo.",
+        ),
       );
     }
   });
-
-  if (!table) {
-    return null;
-  }
 
   return (
     <Modal
@@ -144,11 +155,10 @@ export function OpenSessionModal({
           ]}
         >
           <Text style={mesasModalStyles.sheetTitle}>
-            Abrir mesa {table.number}
+            Mesa {tableNumber} — mesero y comensales
           </Text>
           <Text style={mesasModalStyles.sheetHint}>
-            Capacidad máxima: {table.capacity} comensales. Elegí mesero y
-            cantidad de personas.
+            Capacidad máxima: {capacity} comensales.
           </Text>
 
           <ScrollView
@@ -238,9 +248,7 @@ export function OpenSessionModal({
               {isSubmitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={mesasModalStyles.primaryBtnText}>
-                  Confirmar apertura
-                </Text>
+                <Text style={mesasModalStyles.primaryBtnText}>Guardar</Text>
               )}
             </Pressable>
 

@@ -106,10 +106,9 @@ export function UsageGuideScreen() {
 
         <SectionBlock icon="grid-outline" title="Mesas — operación en el salón">
           <Text style={styles.body}>
-            Es la pantalla central del turno. Arriba ves tres números resumidos
-            del día actual según el servidor: ocupación de mesas, personas
-            sentadas respecto de la capacidad de las mesas activas, e ítems
-            vendidos en el día.
+            Es la pantalla central del turno. Arriba ves dos números resumidos
+            del día actual según el servidor: ocupación de mesas y personas
+            sentadas respecto de la capacidad de las mesas activas.
           </Text>
           <View style={styles.bulletGroup}>
             <Bullet>
@@ -117,9 +116,9 @@ export function UsageGuideScreen() {
               en catálogo se administran en Gestión mesas.
             </Bullet>
             <Bullet>
-              Podés aplicar hasta dos layouts de planta a la vez: las mesas del
-              layout aparecen agrupadas; el resto queda debajo, sin salir del
-              servicio.
+              Podés aplicar varios layouts de planta a la vez si no comparten
+              mesas: cada uno aparece agrupado; el resto queda debajo, sin salir
+              del servicio.
             </Bullet>
             <Bullet>
               Mesa libre y activa: podés abrir sesión (mozo, cantidad de
@@ -208,10 +207,11 @@ export function UsageGuideScreen() {
             cada distribución de planta. Al aplicar un layout en inicio, solo se
             encienden en salón las mesas que el layout marca como activas y que
             ya estaban activas en catálogo; las mesas activas que no entran en
-            el dibujo siguen visibles debajo de los recuadros. Podés tener hasta
-            dos layouts a la vez si no comparten mesas; si comparten, el diálogo
-            «Layouts incompatibles» permite reemplazar quitando los necesarios
-            desde el primero aplicado.
+            el dibujo siguen visibles debajo de los recuadros. Podés combinar
+            todos los layouts que quieras mientras no se solapen; si un layout
+            nuevo choca con alguno ya aplicado, el diálogo «Layouts incompatibles»
+            ofrece reemplazar (se quitan solo los que comparten mesas) o dejar
+            todo como está.
           </Text>
 
           <SuggestedImageCallout

@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import {
   cardShadowStyle,
   mesasModalStyles,
@@ -127,6 +128,15 @@ export function TableCard({
         </Text>
       </View>
 
+      {active && occupied && table.activeWaiterName ? (
+        <Text
+          style={[styles.waiterName, compact && styles.waiterNameCompact]}
+          numberOfLines={1}
+        >
+          Mozo: {table.activeWaiterName}
+        </Text>
+      ) : null}
+
       <Pressable
         style={({ pressed }) => [
           styles.primaryBtn,
@@ -154,6 +164,7 @@ export function TableCard({
       </Pressable>
 
       <Modal
+        {...modalStackingProps}
         visible={sheetVisible}
         transparent
         animationType="slide"
@@ -336,6 +347,19 @@ const styles = StyleSheet.create({
   },
   statusTextCompact: {
     fontSize: 11,
+  },
+  waiterName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: mesasTheme.occupied,
+    marginTop: 2,
+    marginBottom: 12,
+    lineHeight: 17,
+  },
+  waiterNameCompact: {
+    fontSize: 11,
+    marginBottom: 8,
+    lineHeight: 14,
   },
   primaryBtn: {
     backgroundColor: welcomeTheme.orange,

@@ -20,6 +20,7 @@ import {
   updateWaiter,
   type PublicWaiter,
 } from "@/src/api/waiters.api";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import {
   mesasModalStyles,
   mesasTheme,
@@ -92,6 +93,7 @@ export function WaiterFormModal({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

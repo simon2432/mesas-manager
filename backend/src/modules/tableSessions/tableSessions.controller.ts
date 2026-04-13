@@ -6,6 +6,7 @@ import {
   openSessionBodySchema,
   sessionIdParamSchema,
   sessionItemParamsSchema,
+  updateOpenSessionBodySchema,
   updateSessionItemBodySchema,
 } from "./tableSessions.schemas";
 import * as tableSessionsService from "./tableSessions.service";
@@ -90,6 +91,24 @@ export const removeItem = asyncHandler(async (req: Request, res: Response) => {
     params.itemId,
   );
   res.status(200).json(result);
+});
+
+export const updateMeta = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseSessionId(req, res);
+  if (id === null) return;
+
+  const parsed = updateOpenSessionBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    res.status(400).json({ message: first?.message ?? "Solicitud inválida" });
+    return;
+  }
+
+  const session = await tableSessionsService.updateOpenSessionMeta(
+    id,
+    parsed.data,
+  );
+  res.status(200).json({ session });
 });
 
 export const close = asyncHandler(async (req: Request, res: Response) => {

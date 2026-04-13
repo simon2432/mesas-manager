@@ -1,3 +1,4 @@
+import { mesasTheme } from "@/src/constants/mesasTheme";
 import { effectiveTodayYmd } from "@/src/store/operationalDay.store";
 
 type Props = {
@@ -21,11 +22,10 @@ export function WebDateInput({ value, onChange, minYmd, maxYmd }: Props) {
         padding: 12,
         fontSize: 16,
         borderRadius: 8,
-        border: "1px solid #e2e4e8",
+        border: `1px solid ${mesasTheme.border}`,
         marginTop: 8,
         marginBottom: 8,
         boxSizing: "border-box",
-        fontFamily: "system-ui, sans-serif",
       }}
     />
   );

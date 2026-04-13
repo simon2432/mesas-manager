@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
 import {
   deviceLocalYmd,
@@ -100,6 +101,7 @@ export function CalendarPickModal({
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       transparent
       animationType="fade"

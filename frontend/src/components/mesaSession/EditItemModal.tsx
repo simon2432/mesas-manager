@@ -4,6 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,16 +24,13 @@ import {
   type SessionItemPublic,
 } from "@/src/api/tableSessions.api";
 import { welcomeTheme } from "@/src/constants/authTheme";
-import {
-  mesasModalStyles,
-  mesasTheme,
-} from "@/src/constants/mesasTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
+import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
 import {
   editConsumptionSchema,
   type EditConsumptionFormInput,
   type EditConsumptionParsed,
 } from "@/src/schemas/mesaSession.schema";
-import { useConfirm } from "@/src/components/ui/ConfirmProvider";
 
 type Props = {
   visible: boolean;
@@ -50,8 +48,10 @@ export function EditItemModal({
   onChanged,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const confirm = useConfirm();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  /** Confirmación in-modal: en iOS un segundo `Modal` (useConfirm) suele quedar invisible o bloquear toques. */
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const {
     control,
@@ -71,10 +71,15 @@ export function EditItemModal({
       });
       setSubmitError(null);
     }
+    if (!visible) {
+      setDeleteConfirmOpen(false);
+      setDeleting(false);
+    }
   }, [item, visible, reset]);
 
   const close = () => {
     setSubmitError(null);
+    setDeleteConfirmOpen(false);
     onClose();
   };
 
@@ -89,49 +94,58 @@ export function EditItemModal({
       onChanged();
       close();
     } catch (e) {
-      setSubmitError(
-        getApiErrorMessage(e, "No se pudo guardar el consumo."),
-      );
+      setSubmitError(getApiErrorMessage(e, "No se pudo guardar el consumo."));
     }
   });
 
-  const confirmDelete = () => {
+  const openDeleteConfirm = () => {
+    Keyboard.dismiss();
+    setDeleteConfirmOpen(true);
+  };
+
+  const runDelete = async () => {
     if (!item) return;
-    void (async () => {
-      const ok = await confirm({
-        title: "¿Eliminar esta línea?",
-        message: item.productName,
-        confirmLabel: "Eliminar",
-        destructive: true,
-      });
-      if (!ok) return;
-      try {
-        await deleteSessionItem(sessionId, item.id);
-        onChanged();
-        close();
-      } catch (e) {
-        Alert.alert(
-          "Error",
-          getApiErrorMessage(e, "No se pudo eliminar."),
-        );
-      }
-    })();
+    setDeleting(true);
+    try {
+      await deleteSessionItem(sessionId, item.id);
+      setDeleteConfirmOpen(false);
+      onChanged();
+      close();
+    } catch (e) {
+      Alert.alert("Error", getApiErrorMessage(e, "No se pudo eliminar."));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (!item) return null;
 
+  const onRequestModalClose = () => {
+    if (deleteConfirmOpen) {
+      setDeleteConfirmOpen(false);
+      return;
+    }
+    close();
+  };
+
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="fade"
       transparent
-      onRequestClose={close}
+      onRequestClose={onRequestModalClose}
     >
       <KeyboardAvoidingView
         style={mesasModalStyles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <Pressable style={mesasModalStyles.dim} onPress={close} />
+        <Pressable
+          style={mesasModalStyles.dim}
+          onPress={() => {
+            if (!deleteConfirmOpen) close();
+          }}
+        />
         <View
           style={[
             mesasModalStyles.sheet,
@@ -195,7 +209,7 @@ export function EditItemModal({
                 isSubmitting && mesasModalStyles.primaryBtnDisabled,
               ]}
               onPress={onSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || deleting}
             >
               {isSubmitting ? (
                 <ActivityIndicator color="#fff" />
@@ -206,17 +220,72 @@ export function EditItemModal({
 
             <Pressable
               style={styles.deleteBtn}
-              onPress={confirmDelete}
-              disabled={isSubmitting}
+              onPress={openDeleteConfirm}
+              disabled={isSubmitting || deleting}
             >
               <Text style={styles.deleteBtnText}>Eliminar línea</Text>
             </Pressable>
 
-            <Pressable style={mesasModalStyles.ghostBtn} onPress={close}>
+            <Pressable
+              style={mesasModalStyles.ghostBtn}
+              onPress={close}
+              disabled={deleting}
+            >
               <Text style={mesasModalStyles.ghostBtnText}>Cancelar</Text>
             </Pressable>
           </ScrollView>
         </View>
+
+        {deleteConfirmOpen ? (
+          <View
+            style={[
+              styles.deleteOverlay,
+              {
+                paddingTop: Math.max(insets.top, 16),
+                paddingBottom: Math.max(insets.bottom, 16),
+              },
+            ]}
+            pointerEvents="box-none"
+          >
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => !deleting && setDeleteConfirmOpen(false)}
+              accessibilityLabel="Cerrar confirmación"
+            />
+            <View style={styles.deleteCard} accessibilityRole="alert">
+              <Text style={styles.deleteCardTitle}>¿Eliminar esta línea?</Text>
+              <Text style={styles.deleteCardMsg}>{item.productName}</Text>
+              <View style={styles.deleteCardActions}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.deleteCardBtnGhost,
+                    pressed && styles.btnPressed,
+                    deleting && styles.btnDisabled,
+                  ]}
+                  onPress={() => !deleting && setDeleteConfirmOpen(false)}
+                  disabled={deleting}
+                >
+                  <Text style={styles.deleteCardBtnGhostText}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.deleteCardBtnDanger,
+                    pressed && styles.btnPressed,
+                    deleting && styles.btnDisabled,
+                  ]}
+                  onPress={() => void runDelete()}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.deleteCardBtnDangerText}>Eliminar</Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -253,4 +322,77 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
+  deleteOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "rgba(15, 18, 24, 0.55)",
+    zIndex: 100,
+  },
+  deleteCard: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 18,
+    borderWidth: 1,
+    borderColor: mesasTheme.border,
+    zIndex: 2,
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+  },
+  deleteCardTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: welcomeTheme.textDark,
+    marginBottom: 10,
+    letterSpacing: -0.3,
+  },
+  deleteCardMsg: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: mesasTheme.muted,
+    marginBottom: 22,
+  },
+  deleteCardActions: {
+    gap: 10,
+  },
+  deleteCardBtnGhost: {
+    width: "100%",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: mesasTheme.surface,
+    borderWidth: 1,
+    borderColor: mesasTheme.border,
+  },
+  deleteCardBtnGhostText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: mesasTheme.muted,
+  },
+  deleteCardBtnDanger: {
+    width: "100%",
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: "#b00020",
+    minHeight: 48,
+    justifyContent: "center",
+  },
+  deleteCardBtnDangerText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  btnPressed: { opacity: 0.88 },
+  btnDisabled: { opacity: 0.55 },
 });

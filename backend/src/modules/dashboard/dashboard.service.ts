@@ -4,6 +4,34 @@ import {
   getLocalDayBoundsForYmd,
   inclusiveCalendarDayCount,
 } from "../../utils/localDayBounds";
+
+async function sumItemsSoldInLocalCalendarWindow(
+  start: Date,
+  end: Date,
+): Promise<number> {
+  const [fromClosedTickets, fromOpenSessions] = await Promise.all([
+    prisma.sessionItem.aggregate({
+      where: {
+        tableSession: {
+          status: SESSION_STATUS.CLOSED,
+          closedAt: { gte: start, lte: end },
+        },
+      },
+      _sum: { quantity: true },
+    }),
+    prisma.sessionItem.aggregate({
+      where: {
+        createdAt: { gte: start, lte: end },
+        tableSession: { status: SESSION_STATUS.OPEN },
+      },
+      _sum: { quantity: true },
+    }),
+  ]);
+  return (
+    (fromClosedTickets._sum.quantity ?? 0) +
+    (fromOpenSessions._sum.quantity ?? 0)
+  );
+}
 export type DashboardSummary = {
   selectedDate: string;
   isSelectedDateToday: boolean;
@@ -35,13 +63,10 @@ export async function getDashboardRangeSummary(
   const { start } = getLocalDayBoundsForYmd(fromYmd);
   const { end } = getLocalDayBoundsForYmd(toYmd);
 
-  const [totalTables, itemsAgg, revenueAgg, peopleAgg, sessionsOpened] =
+  const [totalTables, itemsSoldCount, revenueAgg, peopleAgg, sessionsOpened] =
     await Promise.all([
       prisma.restaurantTable.count({ where: { isActive: true } }),
-      prisma.sessionItem.aggregate({
-        where: { createdAt: { gte: start, lte: end } },
-        _sum: { quantity: true },
-      }),
+      sumItemsSoldInLocalCalendarWindow(start, end),
       prisma.tableSession.aggregate({
         where: { openedAt: { gte: start, lte: end } },
         _sum: { total: true },
@@ -62,7 +87,7 @@ export async function getDashboardRangeSummary(
     totalTables,
     sessionsOpened,
     totalPeople: peopleAgg._sum.guestCount ?? 0,
-    itemsSold: itemsAgg._sum.quantity ?? 0,
+    itemsSold: itemsSoldCount,
     revenue: Number(revenueAgg._sum.total ?? 0),
   };
 }
@@ -75,12 +100,7 @@ export async function getDashboardSummary(input: {
 }): Promise<DashboardSummary> {
   const { start, end, ymd, isSelectedDateToday } = input;
 
-  const itemsAggPromise = prisma.sessionItem.aggregate({
-    where: {
-      createdAt: { gte: start, lte: end },
-    },
-    _sum: { quantity: true },
-  });
+  const itemsSoldPromise = sumItemsSoldInLocalCalendarWindow(start, end);
 
   const revenueAggPromise = prisma.tableSession.aggregate({
     where: {
@@ -97,10 +117,10 @@ export async function getDashboardSummary(input: {
       _sum: { guestCount: true },
     });
 
-    const [totalTables, itemsAgg, revenueAgg, peopleOpenedAgg] =
+    const [totalTables, itemsSoldToday, revenueAgg, peopleOpenedAgg] =
       await Promise.all([
         prisma.restaurantTable.count({ where: { isActive: true } }),
-        itemsAggPromise,
+        itemsSoldPromise,
         revenueAggPromise,
         peopleOpenedThatDayPromise,
       ]);
@@ -114,7 +134,7 @@ export async function getDashboardSummary(input: {
       activeSessions: null,
       peopleSeated: null,
       totalPeopleThatDay: peopleOpenedAgg._sum.guestCount ?? 0,
-      itemsSoldToday: itemsAgg._sum.quantity ?? 0,
+      itemsSoldToday,
       revenueToday: Number(revenueAgg._sum.total ?? 0),
     };
   }
@@ -125,7 +145,7 @@ export async function getDashboardSummary(input: {
     freeTables,
     activeSessions,
     seatedAgg,
-    itemsAgg,
+    itemsSoldToday,
     revenueAgg,
   ] = await Promise.all([
     prisma.restaurantTable.count({ where: { isActive: true } }),
@@ -142,7 +162,7 @@ export async function getDashboardSummary(input: {
       where: { status: SESSION_STATUS.OPEN },
       _sum: { guestCount: true },
     }),
-    itemsAggPromise,
+    itemsSoldPromise,
     revenueAggPromise,
   ]);
 
@@ -155,7 +175,7 @@ export async function getDashboardSummary(input: {
     activeSessions,
     peopleSeated: seatedAgg._sum.guestCount ?? 0,
     totalPeopleThatDay: null,
-    itemsSoldToday: itemsAgg._sum.quantity ?? 0,
+    itemsSoldToday,
     revenueToday: Number(revenueAgg._sum.total ?? 0),
   };
 }

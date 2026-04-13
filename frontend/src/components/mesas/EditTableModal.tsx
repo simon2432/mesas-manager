@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -16,9 +16,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getApiErrorMessage } from "@/src/api/auth.api";
 import { updateTable } from "@/src/api/tables.api";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import { mesasModalStyles } from "@/src/constants/mesasTheme";
 import {
-  editTableFormSchema,
+  editTableFormSchemaWithMinCapacity,
   type EditTableFormValues,
   type EditTableParsed,
 } from "@/src/schemas/mesas.schema";
@@ -35,13 +36,29 @@ export function EditTableModal({ visible, table, onClose, onSaved }: Props) {
   const insets = useSafeAreaInsets();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const minGuests = useMemo(() => {
+    if (!table) return 1;
+    if (
+      table.status === "OCCUPIED" &&
+      typeof table.openSessionGuestCount === "number"
+    ) {
+      return table.openSessionGuestCount;
+    }
+    return 1;
+  }, [table]);
+
+  const schema = useMemo(
+    () => editTableFormSchemaWithMinCapacity(minGuests),
+    [minGuests],
+  );
+
   const {
     control,
     handleSubmit,
     reset,
     formState: { isSubmitting },
   } = useForm<EditTableFormValues, unknown, EditTableParsed>({
-    resolver: zodResolver(editTableFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: { number: "1", capacity: "4" },
   });
 
@@ -53,7 +70,7 @@ export function EditTableModal({ visible, table, onClose, onSaved }: Props) {
       });
       setSubmitError(null);
     }
-  }, [table, visible, reset]);
+  }, [table, visible, reset, minGuests]);
 
   const close = () => {
     setSubmitError(null);
@@ -81,6 +98,8 @@ export function EditTableModal({ visible, table, onClose, onSaved }: Props) {
 
   return (
     <Modal
+      {...modalStackingProps}
+      key={`${table.id}-${minGuests}`}
       visible={visible}
       animationType="slide"
       transparent
@@ -103,6 +122,9 @@ export function EditTableModal({ visible, table, onClose, onSaved }: Props) {
           <Text style={mesasModalStyles.sheetHint}>
             Cambiá número o capacidad. Si hay número duplicado, el servidor lo
             rechazará.
+            {minGuests > 1
+              ? ` Con la mesa ocupada, la capacidad no puede ser menor que ${minGuests} (comensales de la sesión).`
+              : ""}
           </Text>
 
           <ScrollView

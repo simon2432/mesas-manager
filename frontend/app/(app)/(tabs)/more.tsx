@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { mesasTheme } from "@/src/constants/mesasTheme";
 import { useAuthStore } from "@/src/store/auth.store";
 
 type IonName = ComponentProps<typeof Ionicons>["name"];
@@ -25,12 +26,12 @@ function Row({ label, icon, onPress, danger }: RowProps) {
       <Ionicons
         name={icon}
         size={22}
-        color={danger ? "#b00020" : welcomeTheme.textDark}
+        color={danger ? mesasTheme.danger : welcomeTheme.textDark}
       />
       <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>
         {label}
       </Text>
-      <Ionicons name="chevron-forward" size={20} color="#999" />
+      <Ionicons name="chevron-forward" size={20} color={mesasTheme.muted} />
     </Pressable>
   );
 }
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: mesasTheme.border,
   },
   title: {
     fontSize: 22,
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 4,
     fontSize: 14,
-    color: "#666",
+    color: mesasTheme.muted,
   },
   list: {
     paddingTop: 8,
@@ -109,10 +110,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
+    borderBottomColor: mesasTheme.border,
   },
   rowPressed: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: mesasTheme.surface,
   },
   rowLabel: {
     flex: 1,
@@ -121,6 +122,6 @@ const styles = StyleSheet.create({
     color: welcomeTheme.textDark,
   },
   rowLabelDanger: {
-    color: "#b00020",
+    color: mesasTheme.danger,
   },
 });

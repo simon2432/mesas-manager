@@ -10,6 +10,7 @@ export const mesasTheme = {
   freeTint: "#e8edf4",
   occupied: "#8B1538",
   inactiveBorder: "#c8c8c8",
+  danger: "#b00020",
 } as const;
 
 export function cardShadowStyle() {
@@ -74,7 +75,7 @@ export const mesasModalStyles = StyleSheet.create({
     marginBottom: 14,
   },
   errorText: {
-    color: "#b00020",
+    color: mesasTheme.danger,
     fontSize: 13,
     marginBottom: 10,
     marginTop: -6,

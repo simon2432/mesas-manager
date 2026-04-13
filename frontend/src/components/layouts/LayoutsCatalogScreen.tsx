@@ -23,6 +23,7 @@ import {
 import { fetchTables, toggleTableActive } from "@/src/api/tables.api";
 import { useConfirm } from "@/src/components/ui/ConfirmProvider";
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import { mesasModalStyles, mesasTheme } from "@/src/constants/mesasTheme";
 import {
   type AppliedLayoutEntry,
@@ -30,7 +31,7 @@ import {
 } from "@/src/store/appliedLayout.store";
 import {
   newLayoutOverlapsApplied,
-  stripAppliedFromFrontUntilNoOverlap,
+  stripAppliedLayoutsOverlappingNew,
 } from "@/src/utils/appliedLayouts.utils";
 import {
   computeApplyLayoutPlan,
@@ -145,7 +146,7 @@ export function LayoutsCatalogScreen() {
     await qc.invalidateQueries({ queryKey: ["dashboard"] });
 
     let msg =
-      "El layout quedó aplicado: en inicio verás sus mesas en el recuadro (hasta dos layouts, uno debajo del otro) y el resto de mesas activas abajo.";
+      "El layout quedó aplicado: en inicio verás sus mesas en su recuadro (podés tener varios layouts a la vez, uno debajo del otro) y el resto de mesas activas abajo.";
     if (plan.skippedInactiveNumbers.length > 0) {
       msg += `\n\nMesas incluidas en el layout pero desactivadas en catálogo (no se reactivaron): ${plan.skippedInactiveNumbers.join(", ")}.`;
     }
@@ -156,7 +157,7 @@ export function LayoutsCatalogScreen() {
     void (async () => {
       const ok = await confirm({
         title: "Aplicar layout",
-        message: `Se activarán las mesas del layout «${l.name}» que estén apagadas. Las mesas activas que no formen parte del layout no se desactivan: seguirán visibles debajo de los recuadros en inicio. Podés tener hasta dos layouts activos si no comparten mesas.`,
+        message: `Se activarán las mesas del layout «${l.name}» que estén apagadas. Las mesas activas que no formen parte del layout no se desactivan: seguirán visibles debajo de los recuadros en inicio. Podés aplicar todos los layouts que quieras siempre que no compartan mesas entre sí.`,
         confirmLabel: "Aplicar",
         destructive: false,
       });
@@ -171,14 +172,6 @@ export function LayoutsCatalogScreen() {
         const plan = computeApplyLayoutPlan(tables, layout.tables);
         const applied = useAppliedLayoutStore.getState().appliedLayouts;
         const newIds = plan.inLayoutActiveIds;
-
-        if (applied.length >= 2 && !newLayoutOverlapsApplied(newIds, applied)) {
-          Alert.alert(
-            "Límite de layouts",
-            "Solo podés tener dos layouts activos a la vez. En inicio usá «Quitar agrupación» y volvé a aplicar los que necesites.",
-          );
-          return;
-        }
 
         if (newLayoutOverlapsApplied(newIds, applied)) {
           setLayoutConflict({ layout, plan });
@@ -207,7 +200,7 @@ export function LayoutsCatalogScreen() {
       setApplyingLayoutId(payload.layout.id);
       try {
         const applied = useAppliedLayoutStore.getState().appliedLayouts;
-        const stripped = stripAppliedFromFrontUntilNoOverlap(
+        const stripped = stripAppliedLayoutsOverlappingNew(
           applied,
           payload.plan.inLayoutActiveIds,
         );
@@ -343,6 +336,7 @@ export function LayoutsCatalogScreen() {
       />
 
       <Modal
+        {...modalStackingProps}
         visible={layoutConflict !== null}
         transparent
         animationType="fade"
@@ -356,12 +350,13 @@ export function LayoutsCatalogScreen() {
             </Text>
             <Text style={mesasModalStyles.sheetHint}>
               El layout «{layoutConflict?.layout.name ?? ""}» comparte mesas con
-              uno o más layouts que ya tenés aplicados. No podés dejar ambos a
-              la vez.
+              uno o más layouts que ya tenés aplicados. No se puede sumar sin
+              sacar esos solapes.
             </Text>
             <Text style={[mesasModalStyles.sheetHint, { marginTop: 10 }]}>
-              Podés cerrar y no aplicar, o reemplazar: se quita el primer layout
-              activo (y los siguientes que sigan chocando) y se aplica este.
+              Reemplazar: se quitan solo los layouts aplicados que comparten
+              mesas con este, y se aplica el nuevo. Dejar como está: no se cambia
+              nada.
             </Text>
             <Pressable
               style={({ pressed }) => [
@@ -376,7 +371,9 @@ export function LayoutsCatalogScreen() {
               style={mesasModalStyles.ghostBtn}
               onPress={closeConflict}
             >
-              <Text style={mesasModalStyles.ghostBtnText}>Cerrar</Text>
+              <Text style={mesasModalStyles.ghostBtnText}>
+                Dejar como está
+              </Text>
             </Pressable>
           </View>
         </View>

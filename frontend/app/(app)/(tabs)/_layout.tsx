@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 
 import { welcomeTheme } from "@/src/constants/authTheme";
+import { mesasTheme } from "@/src/constants/mesasTheme";
 
 export default function TabsLayout() {
   return (
@@ -9,10 +10,10 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: welcomeTheme.orange,
-        tabBarInactiveTintColor: "#8a8a8a",
+        tabBarInactiveTintColor: mesasTheme.muted,
         tabBarStyle: {
           backgroundColor: welcomeTheme.white,
-          borderTopColor: "#e8e8e8",
+          borderTopColor: mesasTheme.border,
         },
       }}
     >

@@ -22,6 +22,7 @@ import {
   type AuthSuccessResponse,
 } from "@/src/api/auth.api";
 import { authColors } from "@/src/constants/authTheme";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import {
   loginFormSchema,
   type LoginFormValues,
@@ -68,6 +69,7 @@ export function LoginModal({ visible, onClose, onSuccess }: Props) {
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

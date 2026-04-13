@@ -21,12 +21,35 @@ export type PublicTable = {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  /** Solo en `getAllTables`: mozo de la sesión abierta, si la mesa está ocupada. */
+  activeWaiterName?: string | null;
+  /** Solo en `getAllTables`: comensales de la sesión abierta (para validar capacidad al editar). */
+  openSessionGuestCount?: number | null;
 };
 
 export async function getAllTables(): Promise<PublicTable[]> {
-  return prisma.restaurantTable.findMany({
-    select: tablePublicSelect,
+  const rows = await prisma.restaurantTable.findMany({
+    select: {
+      ...tablePublicSelect,
+      sessions: {
+        where: { status: SESSION_STATUS.OPEN },
+        take: 1,
+        select: {
+          guestCount: true,
+          waiter: { select: { name: true } },
+        },
+      },
+    },
     orderBy: { number: "asc" },
+  });
+
+  return rows.map((r) => {
+    const { sessions, ...rest } = r;
+    return {
+      ...rest,
+      activeWaiterName: sessions[0]?.waiter?.name ?? null,
+      openSessionGuestCount: sessions[0]?.guestCount ?? null,
+    };
   });
 }
 
@@ -75,6 +98,18 @@ export async function updateTable(
     });
     if (duplicate) {
       throw conflict("Ya existe una mesa con ese número");
+    }
+  }
+
+  if (data.capacity !== undefined) {
+    const openSession = await prisma.tableSession.findFirst({
+      where: { tableId: id, status: SESSION_STATUS.OPEN },
+      select: { guestCount: true },
+    });
+    if (openSession && data.capacity < openSession.guestCount) {
+      throw badRequest(
+        `La capacidad no puede ser menor que los comensales de la sesión abierta (${openSession.guestCount}).`,
+      );
     }
   }
 

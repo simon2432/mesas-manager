@@ -48,3 +48,14 @@ export const updateSessionItemBodySchema = z
   });
 
 export type UpdateSessionItemBody = z.infer<typeof updateSessionItemBodySchema>;
+
+export const updateOpenSessionBodySchema = z
+  .object({
+    waiterId: z.coerce.number().int().positive().optional(),
+    guestCount: z.coerce.number().int().positive().optional(),
+  })
+  .refine((b) => b.waiterId !== undefined || b.guestCount !== undefined, {
+    message: "Indicá al menos un cambio (mesero o personas)",
+  });
+
+export type UpdateOpenSessionBody = z.infer<typeof updateOpenSessionBodySchema>;

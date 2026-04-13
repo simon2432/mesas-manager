@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getApiErrorMessage } from "@/src/api/auth.api";
 import { createTable } from "@/src/api/tables.api";
+import { modalStackingProps } from "@/src/constants/modalPresentation";
 import {
   mesasModalStyles,
   mesasTheme,
@@ -71,6 +72,7 @@ export function CreateTableModal({ visible, onClose, onCreated }: Props) {
 
   return (
     <Modal
+      {...modalStackingProps}
       visible={visible}
       animationType="slide"
       transparent

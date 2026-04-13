@@ -36,7 +36,7 @@ Esperá ~30 s. Creá la base (la primera vez; si ya existe, podés ignorar el er
 docker exec restaurant-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "MesasDemo1" -C -Q "CREATE DATABASE restaurant_db"
 ```
 
-Si falla esa ruta, probá:
+Solo si falla esa ruta, probá:
 
 ```powershell
 docker exec restaurant-sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "MesasDemo1" -C -Q "CREATE DATABASE restaurant_db"
@@ -63,7 +63,7 @@ npm run db:seed
 npm run dev
 ```
 
-La API queda en **http://localhost:3000** · comprobar **http://localhost:3000/health**.
+La API queda en **[http://localhost:3000](http://localhost:3000)** · comprobar **[http://localhost:3000/health](http://localhost:3000/health)**.
 
 ---
 
@@ -87,25 +87,5 @@ Tecla **`w`** para abrir en el navegador.
 | Contraseña | `Demo1234`         |
 
 ---
-
-## Si cambiaste la contraseña en Docker antes
-
-Si ya tenías un volumen de SQL Server con **otra** `SA_PASSWORD`, el contenedor sigue usando la vieja. Opciones: volver a poner en `docker-compose.yml` la clave que tenía el volumen, o borrar el volumen y levantar de nuevo (se pierden datos del contenedor):
-
-```powershell
-cd database
-docker compose down -v
-docker compose up -d
-```
-
-Después recreá `restaurant_db` con el `sqlcmd` del paso 2 y volvé a `migrate deploy` + `db:seed`.
-
----
-
-## Otros
-
-- **Puerto 1433 ocupado** (SQL Server de Windows + Docker): dejá solo uno o cambiá el mapeo en `docker-compose.yml` y el host en `DATABASE_URL`.
-- **Expo en el celular** (misma Wi‑Fi): `EXPO_PUBLIC_API_URL=http://TU_IP:3000/api` antes de `expo start`.
-- **Sin Docker**: creá `restaurant_db` en tu instancia y armá `DATABASE_URL` con tu usuario/clave; si la clave tiene símbolos, en la URL a veces hay que codificar (`!` → `%21`, `@` → `%40`).
 
 Más contexto del producto: **[README](./README.md)**.

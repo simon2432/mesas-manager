@@ -26,16 +26,9 @@ import {
   effectiveTodayYmd,
   useOperationalDayStore,
 } from "@/src/store/operationalDay.store";
+import { formatMoney } from "@/src/utils/formatMoney";
 
 const MAX_RANGE_DAYS = 366;
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
 
 function formatYmdShort(ymd: string) {
   const [y, m, d] = ymd.split("-").map(Number);
@@ -325,8 +318,10 @@ export function DashboardOperativoScreen() {
             <Text
               style={[styles.noticeText, compact && styles.noticeTextCompact]}
             >
-              Totales del período: ítems por fecha de registro; facturación,
-              personas y sesiones por fecha de apertura de la mesa.
+              Totales del período: ítems = tickets cerrados en el rango (todo el
+              consumo) más líneas nuevas en mesas abiertas según fecha de
+              carga; facturación, personas y sesiones por fecha de apertura de
+              la mesa.
             </Text>
           </View>
         ) : null}
@@ -395,14 +390,34 @@ export function DashboardOperativoScreen() {
                   fullWidth={statsSingleColumn}
                 />
               )}
-              <StatCard
-                label={
-                  showLive ? "Ítems vendidos (día)" : "Ítems vendidos ese día"
-                }
-                value={String(s.itemsSoldToday)}
-                compact={compact}
-                fullWidth={statsSingleColumn}
-              />
+              <View
+                style={[
+                  styles.card,
+                  statsSingleColumn ? styles.cardFullWidth : styles.cardHalf,
+                  compact && styles.cardCompactPad,
+                ]}
+              >
+                <Text
+                  style={[styles.cardLabel, compact && styles.cardLabelCompact]}
+                >
+                  {showLive ? "Ítems vendidos (día)" : "Ítems vendidos ese día"}
+                </Text>
+                <Text
+                  style={[
+                    styles.cardValue,
+                    compact && styles.cardValueCompact,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {String(s.itemsSoldToday)}
+                </Text>
+                <Text
+                  style={[styles.cardFoot, compact && styles.cardFootCompact]}
+                >
+                  Tickets cerrados ese día (todo el consumo del ticket) más
+                  líneas cargadas hoy en cuentas abiertas.
+                </Text>
+              </View>
               <View
                 style={[styles.cardWide, compact && styles.cardWideCompact]}
               >
@@ -479,12 +494,35 @@ export function DashboardOperativoScreen() {
               compact={compact}
               fullWidth={statsSingleColumn}
             />
-            <StatCard
-              label="Ítems vendidos"
-              value={String(r.itemsSold)}
-              compact={compact}
-              fullWidth={statsSingleColumn}
-            />
+            <View
+              style={[
+                styles.card,
+                statsSingleColumn ? styles.cardFullWidth : styles.cardHalf,
+                compact && styles.cardCompactPad,
+              ]}
+            >
+              <Text
+                style={[styles.cardLabel, compact && styles.cardLabelCompact]}
+              >
+                Ítems vendidos
+              </Text>
+              <Text
+                style={[
+                  styles.cardValue,
+                  compact && styles.cardValueCompact,
+                ]}
+                numberOfLines={1}
+              >
+                {String(r.itemsSold)}
+              </Text>
+              <Text
+                style={[styles.cardFoot, compact && styles.cardFootCompact]}
+              >
+                Misma regla que por día: cerradas en el período (ticket
+                completo) más líneas nuevas en abiertas con fecha de carga en el
+                período.
+              </Text>
+            </View>
             <View style={[styles.cardWide, compact && styles.cardWideCompact]}>
               <Text
                 style={[styles.cardLabel, compact && styles.cardLabelCompact]}
